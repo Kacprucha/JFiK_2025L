@@ -9,7 +9,7 @@ program
 
 // A variable declaration (e.g., int x;).
 declaration
-    : type ID ENDOFLINE
+    : type ID ENDOFLINE?
     ;
 
 // A function definition (e.g., int main() { ... }).
@@ -51,7 +51,7 @@ statement
 
 // An expression statement (an expression optionally followed by a semicolon).
 expressionStatement
-    : expression? ENDOFLINE
+    : expression ENDOFLINE?
     ;
 
 // Expression rules (here a simplified version starting with assignment).
@@ -104,7 +104,7 @@ iterationStatement
 
 // A return statement with an optional expression.
 jumpStatement
-    : RETURN expression? ENDOFLINE
+    : RETURN expression? ENDOFLINE?
     ;
 
 // ***** Lexer Rules *****
@@ -124,7 +124,7 @@ RETURN : [a-z] [a-z] [a-z] [a-z][a-z] [a-z] ;
 
 ELSE : [a-z] [a-z] [a-z] [a-z] ;
 
-ENDOFLINE : ';' ;
+ENDOFLINE : '\r'? '\n' -> skip ;
 
 // Whitespace (spaces, tabs, newlines) is skipped.
-WS  : [ \t\r\n]+ -> skip ;
+WS  : [ \t]+ -> skip ;
