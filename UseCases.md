@@ -55,20 +55,6 @@ int Maine () {
         Zmienna += 1
     }
     return 0
-    float Test = 0.0f
-}
-```
-
-## Testy dla wersji 16.03 23:00 - Karaś
-
-```
-int Maine () {
-    int Dlu = 4
-    int Zmiena = 0
-    for (int Iter = 0; Iter < Dlu; Iter++) {
-        Zmienna += 1
-    }
-    return 0
 }
 ```
 
@@ -80,7 +66,7 @@ int Main()
 }
 ```
 
-## Release 16.03 - Brzoza
+## Testy dla wersji 16.03 23:10 - Brzoza
 Zmiany:
 - dodanie tablic 
 - dodanie macierzy
@@ -96,4 +82,15 @@ int Test = 0    // Jednoczesna incjalizacja i deklaracja
 int Matrix<x, y, z> = <wiersz; wiersz>  // Tworzenie macierzy o wymiarach x, y, z, przypisanie ma format <wiersz; wiersz; wiersz>
 int Array[x][y][z] = [1, 2, 3, 4]       // Przypisywanie wartości kolejnym komórkom pamięci
 
+```
+
+## Testy dla wersji 16.03 23:30 - Karaś
+
+```
+int Maine () {
+    int Test = 0
+    print(Test)
+    print(1)
+    read(Test)
+}
 ```
