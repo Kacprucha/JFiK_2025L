@@ -15,7 +15,7 @@
 
 ## Wymagania minimalne (10 pkt):
 
-- instrukcja warunkowe, pętla,
+- ~~instrukcja warunkowe, pętla,~~
 - ~~możliwość tworzenia funkcji,~~
 - obsługa zasięgu zmiennych (lokalne i globalne, w pełni funkcjonalne zmienne lokalne)
 
