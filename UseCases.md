@@ -55,6 +55,20 @@ int Maine () {
         Zmienna += 1
     }
     return 0
+    float Test = 0.0f
+}
+```
+
+## Testy dla wersji 16.03 23:00 - Karaś
+
+```
+int Maine () {
+    int Dlu = 4
+    int Zmiena = 0
+    for (int Iter = 0; Iter < Dlu; Iter++) {
+        Zmienna += 1
+    }
+    return 0
 }
 ```
 
@@ -64,4 +78,22 @@ int Main()
     int Test = 0
     Test++
 }
+```
+
+## Release 16.03 - Brzoza
+Zmiany:
+- dodanie tablic 
+- dodanie macierzy
+- dodanie regexu do chara
+- dodanie deklaracji z jednoczesną inicjalizacją
+- dodanie znaku `value` który jest rozumiany jako liczba (znak `numeric`) dowolnego formatu, char lub id zmiennej
+
+Please jak będziesz robił floata to dodaj rzeczy do numeric :>
+
+Nowa składnia:
+```
+int Test = 0    // Jednoczesna incjalizacja i deklaracja
+int Matrix<x, y, z> = <wiersz; wiersz>  // Tworzenie macierzy o wymiarach x, y, z, przypisanie ma format <wiersz; wiersz; wiersz>
+int Array[x][y][z] = [1, 2, 3, 4]       // Przypisywanie wartości kolejnym komórkom pamięci
+
 ```
