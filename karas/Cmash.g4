@@ -54,6 +54,7 @@ statement
     | compoundStatement
     | selectionStatement
     | iterationStatement
+    | loopStatement
     | jumpStatement
     ;
 
@@ -69,6 +70,8 @@ expression
     | FLOAT
     | DOUBLE
     | ID
+    | ID '++'
+    | ID '--'
     | assignment
     ;
 
@@ -113,6 +116,11 @@ selectionStatement
 // A while loop.
 iterationStatement
     : WHILE '(' expression ')' statement
+    ;
+
+// A for loop
+loopStatement
+    : FOR '(' declaration? ';' assignment ';' expression ')' statement
     ;
 
 // A return statement with an optional expression.
