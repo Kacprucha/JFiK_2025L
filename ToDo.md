@@ -1,6 +1,6 @@
 ## Wymagania minimalne (10 pkt):
 
-~~- obsługa dwóch typów zmiennych: całkowite, rzeczywiste,~~
+- ~~obsługa dwóch typów zmiennych: całkowite, rzeczywiste,~~
 - podstawowa obsługa standardowego wejścia-wyjścia (np. polecenia read i print),
 - ~~obsługa podstawowych operacji artmetycznych,~~
 - wskazywanie błędów podczas analizy leksykalno-składniowej﻿
