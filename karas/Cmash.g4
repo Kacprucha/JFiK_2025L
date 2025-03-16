@@ -9,7 +9,15 @@ program
 
 // A variable declaration (e.g., int x;).
 declaration
-    : type ID ENDOFLINE?
+    : type? variableList ENDOFLINE?
+    ;
+
+variableList
+    : variable (',' variable)*   // Multiple variables
+    ;
+
+variable
+    : ID ('=' expression)?
     ;
 
 // A function definition (e.g., int main() { ... }).
@@ -56,12 +64,16 @@ expressionStatement
 
 // Expression rules (here a simplified version starting with assignment).
 expression
-    : assignment
+    : CHAR_LITERAL
+    | INT
+    | FLOAT
+    | ID
+    | assignment
     ;
 
 // Assignment can either be an assignment or fall back to equality.
 assignment
-    : ID '=' expression
+    : ID ASSIGNMENTOPERATOR expression
     | equality
     ;
 
@@ -113,18 +125,35 @@ ID  : [A-Z] [a-zA-Z0-9]* ;
 
 // An integer literal.
 INT : [0-9]+ ;
+FLOAT   : [0-9]+ '.' [0-9]* [fF] ; // Float with 'f'
+DOUBLE  : [0-9]+ '.' [0-9]* ([eE] [+-]? [0-9]+)? ; // Double
+CHAR_LITERAL 
+    : '\'' (ESCAPE_SEQUENCE | ~['\\]) '\''  // A single character or escape sequence
+    ;
+fragment ESCAPE_SEQUENCE
+    : '\\' [btnr0'\\]  // Handles \b, \t, \n, \r, \0, \', \\
+    ;
+
+ASSIGNMENTOPERATOR
+    : '='
+    | '*='
+    | '/='
+    | '%='
+    | '+='
+    | '-='
+    | '<<='
+    | '>>='
+    | '&='
+    | '^='
+    | '|='
+    ;
 
 IF : [a-z] [a-z] ;
-
+ELSE : [a-z] [a-z] [a-z] [a-z] ;
 FOR : [a-z] [a-z] [a-z] ;
-
 WHILE : [a-z] [a-z] [a-z] [a-z] [a-z] ;
-
 RETURN : [a-z] [a-z] [a-z] [a-z][a-z] [a-z] ;
 
-ELSE : [a-z] [a-z] [a-z] [a-z] ;
-
 ENDOFLINE : '\r'? '\n' -> skip ;
-
 // Whitespace (spaces, tabs, newlines) is skipped.
 WS  : [ \t]+ -> skip ;
