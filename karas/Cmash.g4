@@ -67,6 +67,7 @@ expression
     : CHAR_LITERAL
     | INT
     | FLOAT
+    | DOUBLE
     | ID
     | assignment
     ;
