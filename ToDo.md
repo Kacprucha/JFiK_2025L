@@ -2,7 +2,7 @@
 
 - obsługa dwóch typów zmiennych: całkowite, rzeczywiste,
 - podstawowa obsługa standardowego wejścia-wyjścia (np. polecenia read i print),
-- obsługa podstawowych operacji artmetycznych,
+- ~~obsługa podstawowych operacji artmetycznych,~~
 - wskazywanie błędów podczas analizy leksykalno-składniowej﻿
 
 ### Rozszerzenia:
@@ -16,7 +16,7 @@
 ## Wymagania minimalne (10 pkt):
 
 - instrukcja warunkowe, pętla,
-- możliwość tworzenia funkcji,
+- ~~możliwość tworzenia funkcji,~~
 - obsługa zasięgu zmiennych (lokalne i globalne, w pełni funkcjonalne zmienne lokalne)
 
 ### Proponowane rozszerzenia:
