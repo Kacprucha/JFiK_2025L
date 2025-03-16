@@ -14,46 +14,59 @@ int Main()
     njiqpe 0
 }
 ```
+<<<<<<< HEAD
 ## Testy dla wersji 16.03 - Karaś
+=======
+
+## Testy dla wersji 16.03 22:30 - Karaś
+>>>>>>> 620bb7baf7f0c6d120e26ede1832c7afeb7e0409
 
 ```
 int Main()
 {
-    int Test
-    Test = 0
-    nm (Test == 1) {
-        Test = 0
+    int Test = 0
+}
+```
+
+```
+int Main()
+{
+    char Tett = 'c'
+}
+```
+
+```
+int Main()
+{
+    double Test = 0.0
+}
+```
+
+```
+int Main()
+{
+    float Test = 0.0f
+}
+```
+
+## Testy dla wersji 16.03 23:00 - Karaś
+
+```
+int Maine () {
+    int Dlu = 4
+    int Zmiena = 0
+    for (int Iter = 0; Iter < Dlu; Iter++) {
+        Zmienna += 1
     }
-
-    njiqpe 0
+    return 0
 }
 ```
 
 ```
 int Main()
 {
-    int Tes = 0
-}
-```
-
-```
-int Main()
-{
-    int Tes = 'c'
-}
-```
-
-```
-int Main()
-{
-    double Tes = 0.0
-}
-```
-
-```
-int Main()
-{
-    float Tes = 0.0f
+    int Test = 0
+    Test++
 }
 ```
 
