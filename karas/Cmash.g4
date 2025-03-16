@@ -55,6 +55,7 @@ statement
     | selectionStatement
     | iterationStatement
     | loopStatement
+    | ioStatement
     | jumpStatement
     ;
 
@@ -126,6 +127,16 @@ loopStatement
 // A return statement with an optional expression.
 jumpStatement
     : RETURN expression? ENDOFLINE?
+    ;
+
+// I/O Statements
+ioStatement
+    : 'print' '(' printArgs ')' ENDOFLINE?
+    | 'read' '(' ID ')' ENDOFLINE?
+    ;
+
+printArgs
+    : expression (',' expression)*
     ;
 
 // ***** Lexer Rules *****
