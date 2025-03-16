@@ -15,15 +15,9 @@
 
 ## Wymagania minimalne (10 pkt):
 
-<<<<<<< HEAD
-[X] instrukcja warunkowe, pętla,
-[X] możliwość tworzenia funkcji,
-[ ] obsługa zasięgu zmiennych (lokalne i globalne, w pełni funkcjonalne zmienne lokalne)
-=======
 - ~~instrukcja warunkowe, pętla,~~
 - ~~możliwość tworzenia funkcji,~~
 - obsługa zasięgu zmiennych (lokalne i globalne, w pełni funkcjonalne zmienne lokalne)
->>>>>>> 620bb7baf7f0c6d120e26ede1832c7afeb7e0409
 
 ### Proponowane rozszerzenia:
 
