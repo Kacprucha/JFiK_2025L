@@ -125,9 +125,9 @@ jumpStatement
 ID  : [A-Z] [a-zA-Z0-9]* ;
 
 // An integer literal.
-INT : [0-9]+ ;
-FLOAT   : [0-9]+ '.' [0-9]* [fF] ; // Float with 'f'
-DOUBLE  : [0-9]+ '.' [0-9]* ([eE] [+-]? [0-9]+)? ; // Double
+INT : '-'?[0-9]+ ;
+FLOAT   : '-'?[0-9]+ '.' [0-9]* [fF] ; // Float with 'f'
+DOUBLE  : '-'?[0-9]+ '.' [0-9]* ([eE] [+-]? [0-9]+)? ; // Double
 CHAR_LITERAL 
     : '\'' (ESCAPE_SEQUENCE | ~['\\]) '\''  // A single character or escape sequence
     ;
