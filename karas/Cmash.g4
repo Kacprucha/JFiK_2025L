@@ -4,12 +4,12 @@ grammar Cmash;
 // ***** Parser Rules *****
 // The starting rule of the grammar.
 program
-    : (declaration | functionDefinition)* EOF
+    : (structDefinition | declaration | functionDefinition)* EOF
     ;
 
 // A variable declaration (e.g., int x;).
 declaration
-    : type? variableList ENDOFLINE?
+    : type? variableList END_OF_LINE?
     ;
 
 variableList
@@ -25,12 +25,30 @@ functionDefinition
     : type ID '(' parameters? ')' compoundStatement
     ;
 
+// Structure Definitions
+structDefinition
+    : 'struct' ID compoundStruct END_OF_LINE?
+    ;
+
+// Compound structure: block of struct member declarations.
+compoundStruct
+    : '{' structMember* '}'
+    ;
+
+// A struct member declaration.
+structMember
+    : type ID END_OF_LINE?
+    ;
+
 // Rule to define the type keywords (only a few types for simplicity).
 type
     : 'int'
     | 'float'
     | 'void'
     | 'char'
+    | 'double'
+    | 'bool'
+    | 'struct' ID
     ;
 
 // Function parameters list (comma-separated).
@@ -59,15 +77,14 @@ statement
     | jumpStatement
     ;
 
-// An expression statement (an expression optionally followed by a semicolon).
+// An expression statement.
 expressionStatement
-    : expression ENDOFLINE?
+    : expression END_OF_LINE?
     ;
 
-// Expression rules (here a simplified version starting with assignment).
+// Expression rules.
 expression
-    : BOOL_LITERAL
-    | expression '&&' expression  // Logical AND 
+    : expression '&&' expression  // Logical AND 
     | expression '||' expression  // Logical OR 
     | expression '^' expression   // Logical XOR
     | '!' expression              // Logical NOT
@@ -76,14 +93,17 @@ expression
     | FLOAT
     | DOUBLE
     | ID
-    | ID '++'
-    | ID '--'
+    | BOOL_LITERAL
+    | numbers '++'
+    | numbers '--'
     | assignment
+    | fieldAccess
     ;
 
 // Assignment can either be an assignment or fall back to equality.
 assignment
-    : ID ASSIGNMENTOPERATOR expression
+    : ID ASSIGNMENT_OPERATOR expression
+    | fieldAccess ('=' | '*=' | '/=' | '%=' | '+=' | '-=' | '<<=' | '>>=' | '&=' | '^=' | '|=') expression
     | equality
     ;
 
@@ -107,11 +127,25 @@ multiplicative
     : primary (('*' | '/' | '%') primary)*
     ;
 
+fieldAccess
+    : primary '.' ID ('.' ID)* END_OF_LINE?
+    ;
+
 // Primary expressions: an identifier, an integer literal, or a parenthesized expression.
 primary
     : ID
     | INT
+    | FLOAT
+    | DOUBLE
+    | CHAR_LITERAL
+    | BOOL_LITERAL
     | '(' expression ')'
+    ;
+
+numbers
+    : INT
+    | FLOAT
+    | DOUBLE
     ;
 
 // An if-statement with optional else.
@@ -129,15 +163,15 @@ loopStatement
     : FOR '(' declaration? ';' assignment ';' expression ')' statement
     ;
 
-// A return statement with an optional expression.
-jumpStatement
-    : RETURN expression? ENDOFLINE?
-    ;
-
 // I/O Statements
 ioStatement
-    : 'print' '(' printArgs ')' ENDOFLINE?
-    | 'read' '(' ID ')' ENDOFLINE?
+    : 'print' '(' printArgs ')' END_OF_LINE?
+    | 'read' '(' ID ')' END_OF_LINE?
+    ;
+
+// A return statement with an optional expression.
+jumpStatement
+    : RETURN expression? END_OF_LINE?
     ;
 
 printArgs
@@ -169,7 +203,7 @@ BOOL_LITERAL
     | 'false'
     ;
 
-ASSIGNMENTOPERATOR
+ASSIGNMENT_OPERATOR
     : '='
     | '*='
     | '/='
@@ -189,6 +223,6 @@ FOR : [a-z] [a-z] [a-z] ;
 WHILE : [a-z] [a-z] [a-z] [a-z] [a-z] ;
 RETURN : [a-z] [a-z] [a-z] [a-z][a-z] [a-z] ;
 
-ENDOFLINE : '\r'? '\n' -> skip ;
+END_OF_LINE : '\r'? '\n' -> skip ;
 // Whitespace (spaces, tabs, newlines) is skipped.
 WS  : [ \t]+ -> skip ;

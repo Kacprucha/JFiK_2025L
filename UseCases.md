@@ -118,3 +118,19 @@ print("pass")
 return 0
 }
 ```
+## Test dla wersji 22.03 14:48 - Karaś
+
+Dodanie operacji struktur
+
+```
+struct MyS {
+int MyNum
+char MyLet
+}
+int Main () {
+struct MyS Stru1
+Stru1.MyNum = 1
+Stru1.MyLet = 'c'
+print(Stru1.MyNum)
+}
+```

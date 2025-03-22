@@ -21,7 +21,7 @@
 
 ### Proponowane rozszerzenia:
 
-- obsługa struktur (5 pkt)
+- ~~obsługa struktur (5 pkt)~~
 - obsługa klas (5 pkt)
 - dynamiczne typowanie (5 pkt)
 - funkcje-generatory (np. iteratory) (5 pkt)
