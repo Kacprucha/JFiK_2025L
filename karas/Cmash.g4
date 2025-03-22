@@ -66,7 +66,12 @@ expressionStatement
 
 // Expression rules (here a simplified version starting with assignment).
 expression
-    : CHAR_LITERAL
+    : BOOL_LITERAL
+    | expression '&&' expression  // Logical AND 
+    | expression '||' expression  // Logical OR 
+    | expression '^' expression   // Logical XOR
+    | '!' expression              // Logical NOT
+    | CHAR_LITERAL
     | INT
     | FLOAT
     | DOUBLE
@@ -137,6 +142,7 @@ ioStatement
 
 printArgs
     : expression (',' expression)*
+    | PLAIN_TEXT
     ;
 
 // ***** Lexer Rules *****
@@ -152,6 +158,15 @@ CHAR_LITERAL
     ;
 fragment ESCAPE_SEQUENCE
     : '\\' [btnr0'\\]  // Handles \b, \t, \n, \r, \0, \', \\
+    ;
+
+PLAIN_TEXT
+    : '"'[a-zA-Z0-9]*?'"'
+    ;
+
+BOOL_LITERAL
+    : 'true'
+    | 'false'
     ;
 
 ASSIGNMENTOPERATOR

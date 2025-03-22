@@ -9,7 +9,7 @@
 
 - ~~obsługa zmiennych tablicowych (3 pkt)~~
 - ~~obsługa macierzy liczb (+2 pkt)~~
-- obsługa wartości logicznych (2pkt za AND, OR, XOR, NEG, 5 pkt. jeżeli zaimplementowane zostanie short-circuit boolean evaluation)
+- ~~obsługa wartości logicznych (2pkt za AND, OR, XOR, NEG,~~ 5 pkt. jeżeli zaimplementowane zostanie short-circuit boolean evaluation)
 - ~~obsługa liczb o różnej precyzji (np. Float32, Float64) (5 pkt)~~
 - obsługa typu ciąg znaków (string) (3 pkt)
 

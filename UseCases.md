@@ -2,6 +2,10 @@
 
 ## Testy dla wersji 15.03 - Karaś
 
+Wstępna gramatyka ala C z usunięciem ; na końcu linii 
+Usunięciem nazw słów funkcjonalnch zastąpenie ich dowolnym ciągiem znaków o określonej długości
+Nazwy zmiennych muszą zaczynać się dużą literą
+
 ```
 int Main()
 {
@@ -16,6 +20,8 @@ int Main()
 ```
 
 ## Testy dla wersji 16.03 22:30 - Karaś
+
+Dodanie różnych typów zmiennych
 
 ```
 int Main()
@@ -46,6 +52,8 @@ int Main()
 ```
 
 ## Testy dla wersji 16.03 23:00 - Karaś
+
+Dodanie operacji --,++,+=.-=
 
 ```
 int Maine () {
@@ -92,5 +100,21 @@ int Maine () {
     print(Test)
     print(1)
     read(Test)
+}
+```
+
+## Test dla wersji 22.03 13:25 - Karaś
+
+Dodanie operacji logicznych
+Dodanie zmiennych booleańskich
+
+```
+int Main () {
+int Test = 1
+int Test2 = 2
+if (Test1 < Test2 && false) {
+print("pass")
+}
+return 0
 }
 ```
