@@ -32,7 +32,7 @@ structDefinition
 
 // Compound structure: block of struct member declarations.
 compoundStruct
-    : '{' structMember* '}'
+    : '{' structMember* functionDefinition* '}'
     ;
 
 // A struct member declaration.
@@ -54,6 +54,7 @@ type
 // Function parameters list (comma-separated).
 parameters
     : parameter (',' parameter)*
+    | ID (',' ID)*
     ;
 
 // A single function parameter (e.g., int x).
@@ -97,6 +98,7 @@ expression
     | numbers '++'
     | numbers '--'
     | assignment
+    | functionCall
     | fieldAccess
     ;
 
@@ -129,6 +131,11 @@ multiplicative
 
 fieldAccess
     : primary '.' ID ('.' ID)* END_OF_LINE?
+    ;
+
+functionCall
+    : ID '(' parameters? ')' END_OF_LINE?
+    | fieldAccess '(' parameters? ')' END_OF_LINE?
     ;
 
 // Primary expressions: an identifier, an integer literal, or a parenthesized expression.
@@ -175,7 +182,12 @@ jumpStatement
     ;
 
 printArgs
-    : expression (',' expression)*
+    : printArg (',' printArg)*
+    ;
+
+// Each argument is either an expression or a string
+printArg
+    : expression
     | PLAIN_TEXT
     ;
 
@@ -194,9 +206,7 @@ fragment ESCAPE_SEQUENCE
     : '\\' [btnr0'\\]  // Handles \b, \t, \n, \r, \0, \', \\
     ;
 
-PLAIN_TEXT
-    : '"'[a-zA-Z0-9]*?'"'
-    ;
+PLAIN_TEXT : '"' (~["\r\n])* '"';
 
 BOOL_LITERAL
     : 'true'

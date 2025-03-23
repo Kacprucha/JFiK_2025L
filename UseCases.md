@@ -134,3 +134,25 @@ Stru1.MyLet = 'c'
 print(Stru1.MyNum)
 }
 ```
+
+## Test dla wersji 23.03 14:05 - Karaś
+
+Dodanie możliwości dodawania metod do struktur
+Poprawa printu żeby obługiwał bardziej skomlikowane struktury
+
+```
+struct MyS {
+char MyL
+int MyN
+void PrintInfo () {
+print (MyL, " is ", MyN, " yers old")
+}
+}
+
+int Main () {
+struct MyS Stru1
+Stru1.MyL = 'k'
+Stru1.MyN = 5
+Stru1.PrintInfo()
+}
+```
