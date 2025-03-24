@@ -145,6 +145,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_program; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterProgram(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitProgram(this);
+		}
 	}
 
 	public final ProgramContext program() throws RecognitionException {
@@ -214,6 +222,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_declaration; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterDeclaration(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitDeclaration(this);
+		}
 	}
 
 	public final DeclarationContext declaration() throws RecognitionException {
@@ -270,6 +286,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_variableList; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterVariableList(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitVariableList(this);
+		}
 	}
 
 	public final VariableListContext variableList() throws RecognitionException {
@@ -320,6 +344,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_variable; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterVariable(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitVariable(this);
+		}
 	}
 
 	public final VariableContext variable() throws RecognitionException {
@@ -372,6 +404,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_functionDefinition; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterFunctionDefinition(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitFunctionDefinition(this);
+		}
 	}
 
 	public final FunctionDefinitionContext functionDefinition() throws RecognitionException {
@@ -425,6 +465,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_structDefinition; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterStructDefinition(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitStructDefinition(this);
+		}
 	}
 
 	public final StructDefinitionContext structDefinition() throws RecognitionException {
@@ -481,6 +529,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_compoundStruct; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterCompoundStruct(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitCompoundStruct(this);
+		}
 	}
 
 	public final CompoundStructContext compoundStruct() throws RecognitionException {
@@ -549,6 +605,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_structMember; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterStructMember(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitStructMember(this);
+		}
 	}
 
 	public final StructMemberContext structMember() throws RecognitionException {
@@ -592,6 +656,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_type; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterType(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitType(this);
+		}
 	}
 
 	public final TypeContext type() throws RecognitionException {
@@ -683,6 +755,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_parameters; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterParameters(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitParameters(this);
+		}
 	}
 
 	public final ParametersContext parameters() throws RecognitionException {
@@ -770,6 +850,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_parameter; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterParameter(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitParameter(this);
+		}
 	}
 
 	public final ParameterContext parameter() throws RecognitionException {
@@ -813,6 +901,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_compoundStatement; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterCompoundStatement(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitCompoundStatement(this);
+		}
 	}
 
 	public final CompoundStatementContext compoundStatement() throws RecognitionException {
@@ -892,6 +988,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_statement; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterStatement(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitStatement(this);
+		}
 	}
 
 	public final StatementContext statement() throws RecognitionException {
@@ -983,6 +1087,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_expressionStatement; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterExpressionStatement(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitExpressionStatement(this);
+		}
 	}
 
 	public final ExpressionStatementContext expressionStatement() throws RecognitionException {
@@ -1047,6 +1159,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_expression; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterExpression(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitExpression(this);
+		}
 	}
 
 	public final ExpressionContext expression() throws RecognitionException {
@@ -1231,6 +1351,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_assignment; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterAssignment(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitAssignment(this);
+		}
 	}
 
 	public final AssignmentContext assignment() throws RecognitionException {
@@ -1303,6 +1431,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_equality; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterEquality(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitEquality(this);
+		}
 	}
 
 	public final EqualityContext equality() throws RecognitionException {
@@ -1366,6 +1502,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_relational; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterRelational(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitRelational(this);
+		}
 	}
 
 	public final RelationalContext relational() throws RecognitionException {
@@ -1429,6 +1573,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_additive; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterAdditive(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitAdditive(this);
+		}
 	}
 
 	public final AdditiveContext additive() throws RecognitionException {
@@ -1492,6 +1644,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_multiplicative; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterMultiplicative(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitMultiplicative(this);
+		}
 	}
 
 	public final MultiplicativeContext multiplicative() throws RecognitionException {
@@ -1557,6 +1717,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_fieldAccess; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterFieldAccess(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitFieldAccess(this);
+		}
 	}
 
 	public final FieldAccessContext fieldAccess() throws RecognitionException {
@@ -1627,6 +1795,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_functionCall; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterFunctionCall(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitFunctionCall(this);
+		}
 	}
 
 	public final FunctionCallContext functionCall() throws RecognitionException {
@@ -1727,6 +1903,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_primary; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterPrimary(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitPrimary(this);
+		}
 	}
 
 	public final PrimaryContext primary() throws RecognitionException {
@@ -1813,6 +1997,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_numbers; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterNumbers(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitNumbers(this);
+		}
 	}
 
 	public final NumbersContext numbers() throws RecognitionException {
@@ -1862,6 +2054,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_selectionStatement; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterSelectionStatement(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitSelectionStatement(this);
+		}
 	}
 
 	public final SelectionStatementContext selectionStatement() throws RecognitionException {
@@ -1918,6 +2118,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_iterationStatement; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterIterationStatement(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitIterationStatement(this);
+		}
 	}
 
 	public final IterationStatementContext iterationStatement() throws RecognitionException {
@@ -1968,6 +2176,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_loopStatement; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterLoopStatement(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitLoopStatement(this);
+		}
 	}
 
 	public final LoopStatementContext loopStatement() throws RecognitionException {
@@ -2027,6 +2243,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_ioStatement; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterIoStatement(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitIoStatement(this);
+		}
 	}
 
 	public final IoStatementContext ioStatement() throws RecognitionException {
@@ -2109,6 +2333,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_jumpStatement; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterJumpStatement(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitJumpStatement(this);
+		}
 	}
 
 	public final JumpStatementContext jumpStatement() throws RecognitionException {
@@ -2165,6 +2397,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_printArgs; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterPrintArgs(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitPrintArgs(this);
+		}
 	}
 
 	public final PrintArgsContext printArgs() throws RecognitionException {
@@ -2215,6 +2455,14 @@ public class CmashParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_printArg; }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterPrintArg(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitPrintArg(this);
+		}
 	}
 
 	public final PrintArgContext printArg() throws RecognitionException {
