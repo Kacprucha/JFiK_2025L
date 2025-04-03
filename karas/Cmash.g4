@@ -10,6 +10,12 @@ program
 // A variable declaration (e.g., int x;).
 declaration
     : type? variableList END_OF_LINE?
+    | stringDeclaration
+    ;
+
+// A string declaration with fixed length.
+stringDeclaration
+    : 'string' '[' INT ']' ID ( '=' PLAIN_TEXT )? END_OF_LINE?
     ;
 
 variableList
@@ -49,6 +55,7 @@ type
     | 'double'
     | 'bool'
     | 'struct' ID
+    | 'string' '[' INT ']' 
     ;
 
 // Function parameters list (comma-separated).
@@ -100,6 +107,7 @@ expression
     | assignment
     | functionCall
     | fieldAccess
+    | arrayAccess
     ;
 
 // Assignment can either be an assignment or fall back to equality.
@@ -153,6 +161,10 @@ numbers
     : INT
     | FLOAT
     | DOUBLE
+    ;
+
+arrayAccess
+    : ID '[' expression ']'* END_OF_LINE?
     ;
 
 // An if-statement with optional else.
