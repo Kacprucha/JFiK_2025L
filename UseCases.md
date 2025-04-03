@@ -156,3 +156,17 @@ Stru1.MyN = 5
 Stru1.PrintInfo()
 }
 ```
+
+## Test da wersji 3.04.2025
+
+Dodanie typu string z rezerwacją miejsca na jego pojemność
+Dodanie możliwości dostawania się do elementów stringu za pomocą ideksowania
+
+```
+int Main() {
+string[7] Example = "exam"
+char MyChar = Example[2]
+print(Example)
+print(Example[2])
+}
+```
