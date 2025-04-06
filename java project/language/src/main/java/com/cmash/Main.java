@@ -20,11 +20,8 @@ public class Main {
         ParseTree tree = parser.program ();
         
         // Walk the parse tree using a custom listener or visitor
-        //ParseTreeWalker walker = new ParseTreeWalker ();
-        //CmashCustomListener listener = new CmashCustomListener ();
-        //walker.walk (listener, tree);
 
-        CmashCustomVisitor visitor = new CmashCustomVisitor();
-        visitor.visit(tree);
+        ParseTreeWalker walker = new ParseTreeWalker();
+        walker.walk(new LLVMAction(), tree);
     }
 }

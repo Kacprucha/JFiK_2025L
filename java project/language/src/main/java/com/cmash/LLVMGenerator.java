@@ -1,0 +1,102 @@
+package com.cmash;
+
+class LLVMGenerator {
+    private static StringBuilder globalBuilder = new StringBuilder();
+    private static StringBuilder builder = new StringBuilder();
+
+    private static int tempRegCount = 0;
+    private static int labelCount = 0;
+    private static int stringCount = 0;
+
+    public static void reset() {
+        builder.setLength(0); // Clear the StringBuilder
+        tempRegCount = 0; // Reset temporary register count
+        labelCount = 0; // Reset label count
+        stringCount = 0; // Reset string count
+    }
+
+    public static void emit(String line) {
+        builder.append(line).append("\n");
+    }
+
+    // Emits a line into the global buffer.
+    public static void emitGlobal(String line) {
+        globalBuilder.append(line).append("\n");
+    }
+    
+    // Returns the final IR code with globals first, then functions.
+    public static String getEmittedCode() {
+        return globalBuilder.toString() + "\n" + builder.toString();
+    }
+
+    public static String newTempReg() {
+        return "%t" + (tempRegCount++);
+    }
+
+    // Generates a unique label for branching.
+    public static String newLabel() {
+        return "label" + (labelCount++);
+    }
+
+    public static void startFunction(String funcName, String llvmReturnType, String paramSig) {
+        emit("define " + llvmReturnType + " @" + funcName + "(" + paramSig + ") {");
+    }
+
+    public static void endFunction() {
+        emit("}");
+        emit("");
+    }
+
+    public static void declareGlobal(String varName, String llvmType, String initVal) {
+        emit("@" + varName + " = global " + llvmType + " " + initVal);
+    }
+
+    public static SelectionLabels newSelectionLabels(boolean hasElse) {
+        String thenLabel = newLabel();
+        String mergeLabel = newLabel();
+        String elseLabel = hasElse ? newLabel() : null;
+        return new SelectionLabels(thenLabel, elseLabel, mergeLabel);
+    }
+    
+    public static void emitConditionalBranch(String condReg, SelectionLabels labels) {
+        if (labels.elseLabel != null) {
+            emit("br i1 " + condReg + ", label %" + labels.thenLabel + ", label %" + labels.elseLabel);
+        } else {
+            emit("br i1 " + condReg + ", label %" + labels.thenLabel + ", label %" + labels.mergeLabel);
+        }
+    }
+
+    public static String newGlobalString(String text) {
+        String name = "@.str" + (stringCount++);
+        int length = text.length() + 1;
+        // Emit the global constant in the global buffer.
+        emitGlobal(name + " = constant [" + length + " x i8] c\"" + text + "\\00\"");
+        return name;
+    }
+
+    public static String loadValue(String llvmType, String pointer) {
+        String tmpReg = newTempReg();
+        emit(tmpReg + " = load " + llvmType + ", " + llvmType + "* " + pointer);
+        return tmpReg;
+    }
+
+    public static String generate(){
+        String text = "";
+        text += "declare i32 @printf(i8*, ...)\n";
+        text += "declare i32 @__isoc99_scanf(i8*, ...)\n";
+        text += "@strp = constant [4 x i8] c\"%d\\0A\\00\"\n";
+        text += "@strs = constant [4 x i8] c\"%s\\0A\\00\" \n";
+        text += "@strpi = constant [4 x i8] c\"%d\\0A\\00\"\n";
+        text += "@strpd = constant [4 x i8] c\"%f\\0A\\00\"\n";
+        text += "@strd = constant [4 x i8] c\"%d\\0A\\00\"\n";
+        text += "@strf = constant [4 x i8] c\"%f\\0A\\00\"\n";
+        text += "@strlf = constant [5 x i8] c\"%lf\\0A\\00\"\n";
+        text += "@strs_in = constant [3 x i8] c\"%d\\00\"\n";
+        text += getEmittedCode();
+        text += "define i32 @main() nounwind{\n";
+        text += "%res = call i32 @Maine()\n";
+        text += "ret i32 0 }\n";
+        return text;
+     }
+
+}
