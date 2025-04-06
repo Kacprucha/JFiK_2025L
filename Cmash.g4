@@ -9,7 +9,7 @@ program
 
 // A variable declaration (e.g., int x;).
 declaration
-    : type? variableList END_OF_LINE?
+    : type variableList END_OF_LINE?
     | stringDeclaration
     | type ID arraySize (arraySize)* ('=' '[' values ']')? END_OF_LINE?
     | type ID matrixSize ('=' '<' matrixRow (';' matrixRow)* '>')? END_OF_LINE?
@@ -125,9 +125,9 @@ expression
     | expression '^' expression   // Logical XOR
     | '!' expression              // Logical NOT
     | CHAR_LITERAL
-    | INT
     | FLOAT
     | DOUBLE
+    | INT
     | ID
     | BOOL_LITERAL
     | numbers '++'
