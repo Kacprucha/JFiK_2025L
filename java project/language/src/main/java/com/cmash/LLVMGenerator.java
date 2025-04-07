@@ -1,5 +1,7 @@
 package com.cmash;
 
+import java.util.ArrayList;
+
 class LLVMGenerator {
     private static StringBuilder globalBuilder = new StringBuilder();
     private static StringBuilder builder = new StringBuilder();
@@ -30,7 +32,8 @@ class LLVMGenerator {
     }
 
     public static String newTempReg() {
-        return "%t" + (tempRegCount++);
+        String name = "%t" + (tempRegCount++);
+        return name;
     }
 
     // Generates a unique label for branching.
@@ -88,7 +91,7 @@ class LLVMGenerator {
 
             String doubleTemp = LLVMGenerator.newTempReg();
             String floatTemp = LLVMGenerator.newTempReg();
-            
+
             // Save given constant under global variable
             LLVMGenerator.emit("store double " + initVal.register + " , double* @doubleToFloat\n");
             // Load given variable
@@ -122,7 +125,11 @@ class LLVMGenerator {
         text += "@strd = constant [4 x i8] c\"%d\\0A\\00\"\n";
         text += "@strf = constant [4 x i8] c\"%f\\0A\\00\"\n";
         text += "@strlf = constant [5 x i8] c\"%lf\\0A\\00\", align 1\n";
+        // Read operations
         text += "@strs_in = constant [3 x i8] c\"%d\\00\"\n";
+        text += "@strd_in = constant [3 x i8] c\"%d\\00\" \n";   //For integers (i32)
+        text += "@strf_in = constant [3 x i8] c\"%f\\00\" \n";  // For floats (float)
+        text += "@strlf_in = constant [4 x i8] c\"%lf\\00\" \n";  //For doubles (double)
         text += "@doubleToFloat = global double 0.0\n";
         text += getEmittedCode();
         text += "define i32 @main() nounwind{\n";

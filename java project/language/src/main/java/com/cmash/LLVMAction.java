@@ -861,7 +861,61 @@ public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
                 LLVMGenerator.emit("; Warning: no print arguments provided");
             }
         } else if (token.equals("read")) {
-            // Handle read similarly.
+            // Handle read statement
+            String varName = ctx.ID().getText();
+            LLVMGenerator.emit("; Read token " + varName + "\n");
+            ValueAndType register;
+            VariableInfo varInfo;
+            if (inFunction && localVars.containsKey(varName)) {
+                // If the text is a variable name, retrieve its LLVM representation.
+                varInfo = localVars.get(varName);
+                register = new ValueAndType(LLVMGenerator.loadValue(varInfo.llvmType, varInfo.pointerName), varInfo.llvmType);
+            } else if (globalVars.containsKey(varName)) {
+                // If the text is a global variable name, retrieve its LLVM representation.
+                varInfo = globalVars.get(varName);
+                register = new ValueAndType(LLVMGenerator.loadValue(varInfo.llvmType, varInfo.pointerName), varInfo.llvmType);
+            }
+            else {
+                LLVMGenerator.emit("; Error: Variable '" + varName + "' not declared");
+                return;
+            }
+
+            String formatStr;
+            String gepSize;
+            String argType;
+
+            switch (register.llvmType) {
+                case "i32":
+                    formatStr = "@strd_in";
+                    gepSize = "3";
+                    argType = "i32*";
+                    break;
+                case "float":
+                    formatStr = "@strf_in";
+                    gepSize = "3";
+                    argType = "float*";
+                    break;
+                case "double":
+                    formatStr = "@strlf_in";
+                    gepSize = "4";
+                    argType = "double*";
+                    break;
+                case "i8*":
+                    formatStr = "@strs_in";
+                    gepSize = "3";
+                    argType = "i8*";
+                    break;
+                default:
+                    LLVMGenerator.emit("; Error: Unsupported type '" + register.llvmType + "' for read");
+                    return;
+            }
+
+            // Generate the scanf call
+            String callInstr = String.format(
+                "call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([%s x i8], [%s x i8]* %s, i32 0, i32 0), %s %s)",
+                gepSize, gepSize, formatStr, argType, varInfo.pointerName
+            );
+            LLVMGenerator.emit(callInstr);
         }
     }
 
