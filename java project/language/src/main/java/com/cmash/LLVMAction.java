@@ -179,17 +179,27 @@ public class LLVMAction extends CmashBaseListener {
             // If the variable is a float, add ", align 4" to the alloca instruction.
             if (llvmType.equals("float")) {
                 LLVMGenerator.emit(localPtr + " = alloca " + llvmType + ", align 4");
+
             } else if (llvmType.equals("double")) {
                 // Optionally, use align 8 for doubles (depending on your platform and desired alignment).
                 LLVMGenerator.emit(localPtr + " = alloca " + llvmType + ", align 8");
             } else {
                 LLVMGenerator.emit(localPtr + " = alloca " + llvmType);
             }
+
             localVars.put(varName, new VariableInfo(localPtr, llvmType));
             if (ctx.expression() != null) {
+                // Special procedure for float
                 ValueAndType initVal = values.get(ctx.expression());
-                LLVMGenerator.emit("store " + llvmType + " " + initVal.register + ", " +
-                                   llvmType + "* " + localPtr);
+
+                if(llvmType.equals("float"))
+                {
+                    LLVMGenerator.FloatValueStore(localPtr, initVal);
+                }
+                else
+                {
+                    LLVMGenerator.emit("store " + llvmType + " " + initVal.register + ", " + llvmType + "* " + localPtr);
+                }
             }
         } else {
             // Global variable handling.
@@ -241,6 +251,7 @@ public class LLVMAction extends CmashBaseListener {
                 // Create a local pointer name, for example: %Test.addr
                 String localPtr = "%" + paramName + ".addr";
                 // Allocate space on the stack.
+
                 LLVMGenerator.emit(localPtr + " = alloca " + paramLLVMType);
                 // Store the incoming parameter (which is available as "%" + paramName)
                 // into the allocated stack slot.
@@ -820,20 +831,31 @@ public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
                 // Here, adjust the GEP instruction according to the actual array size in the format string global.
                 // For example, if @strlf is defined as [5 x i8], use 5, and if @strf is [4 x i8], use 4.
                 String gepSize;
-                if (arg.llvmType.equals("double"))
-                    gepSize = "5";
-                else if (arg.llvmType.equals("float"))
-                    gepSize = "4";
-                else if (arg.llvmType.equals("i32"))
-                    gepSize = "4";
-                else if (arg.llvmType.equals("i8*"))
-                    gepSize = "4";
+                String callInstr;
+
+                //Special cases first:
+                if(arg.llvmType.equals("float"))
+                {
+                    // Need to be extended to double first
+                    String tempreg = LLVMGenerator.FloatToDouble(arg.register);
+                    callInstr = "call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strlf, i32 0, i32 0), double " + tempreg + ")\n";
+                }
                 else
-                    gepSize = "4";
-            
-                String callInstr = "call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([" + gepSize + " x i8], [" + gepSize + " x i8]* " 
-                                    + formatStr + ", i32 0, i32 0), " 
-                                    + arg.llvmType + " " + arg.register + ")";
+                {
+                    if (arg.llvmType.equals("double"))
+                        gepSize = "5";
+                    else if (arg.llvmType.equals("i32"))
+                        gepSize = "4";
+                    else if (arg.llvmType.equals("i8*"))
+                        gepSize = "4";
+                    else
+                        gepSize = "4";
+                
+                    callInstr = "call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([" + gepSize + " x i8], [" + gepSize + " x i8]* " 
+                                        + formatStr + ", i32 0, i32 0), " 
+                                        + arg.llvmType + " " + arg.register + ")";
+                }
+                
                 LLVMGenerator.emit(callInstr);
             } else {
                 LLVMGenerator.emit("; Warning: no print arguments provided");

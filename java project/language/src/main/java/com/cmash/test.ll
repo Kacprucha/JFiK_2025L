@@ -1,7 +1,9 @@
 ;i32 1
+;double 6.9
 ;double 1.2
-;i32 %t0
-;double %t1
+;i32 %t2
+;double %t3
+;float %t4
 ;i32 0
 declare i32 @printf(i8*, ...)
 declare i32 @scanf(i8*, ...)
@@ -13,22 +15,39 @@ declare i32 @scanf(i8*, ...)
 @strf = constant [4 x i8] c"%f\0A\00"
 @strlf = constant [5 x i8] c"%lf\0A\00", align 1
 @strs_in = constant [3 x i8] c"%d\00"
+@doubleToFloat = global double 0.0
 
 define i32 @Maine() {
 %MyInt.addr = alloca i32
 store i32 1, i32* %MyInt.addr
 %MyDouble.addr = alloca double, align 8
-store double 1.2, double* %MyDouble.addr
+store double 6.9, double* %MyDouble.addr
+%MyFloat.addr = alloca float, align 4
+store double 1.2 , double* @doubleToFloat
+
+%t0= load double, double* @doubleToFloat
+
+%t1= fptrunc double %t0 to float
+store float %t1, float* %MyFloat.addr
+
 ; Entering IO statement
 ; Entering printArgs
-%t0 = load i32, i32* %MyInt.addr
+%t2 = load i32, i32* %MyInt.addr
 ; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strpi, i32 0, i32 0), i32 %t0)
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strpi, i32 0, i32 0), i32 %t2)
 ; Entering IO statement
 ; Entering printArgs
-%t1 = load double, double* %MyDouble.addr
+%t3 = load double, double* %MyDouble.addr
 ; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strlf, i32 0, i32 0), double %t1)
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strlf, i32 0, i32 0), double %t3)
+; Entering IO statement
+; Entering printArgs
+%t4 = load float, float* %MyFloat.addr
+; Exiting printArgs with 1 arguments
+%t5= fpext float %t4 to double 
+
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strlf, i32 0, i32 0), double %t5)
+
 ret i32 0
 }
 

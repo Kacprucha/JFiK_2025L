@@ -80,6 +80,37 @@ class LLVMGenerator {
         return tmpReg;
     }
 
+    public static void FloatValueStore(String localPtr, ValueAndType initVal)
+    {
+        try {
+            //Check if value is a double or register
+            float number = Float.parseFloat(initVal.register);
+
+            String doubleTemp = LLVMGenerator.newTempReg();
+            String floatTemp = LLVMGenerator.newTempReg();
+            
+            // Save given constant under global variable
+            LLVMGenerator.emit("store double " + initVal.register + " , double* @doubleToFloat\n");
+            // Load given variable
+            LLVMGenerator.emit(doubleTemp + "= load double, double* @doubleToFloat\n");
+            // Perform truncating 
+            LLVMGenerator.emit(floatTemp + "= fptrunc double " + doubleTemp + " to float");
+            LLVMGenerator.emit("store float " + floatTemp+ ", float* " + localPtr + "\n");
+
+
+        } catch (NumberFormatException e) {
+            LLVMGenerator.emit("store float " + initVal.register + ", float* " + localPtr);
+        }
+    }
+
+    public static String FloatToDouble(String localPtr)
+    {
+        String temp = LLVMGenerator.newTempReg();
+        // Extend into double
+        LLVMGenerator.emit(temp + "= fpext float " + localPtr + " to double \n");
+        return temp;
+    }
+
     public static String generate(){
         String text = "";
         text += "declare i32 @printf(i8*, ...)\n";
@@ -92,6 +123,7 @@ class LLVMGenerator {
         text += "@strf = constant [4 x i8] c\"%f\\0A\\00\"\n";
         text += "@strlf = constant [5 x i8] c\"%lf\\0A\\00\", align 1\n";
         text += "@strs_in = constant [3 x i8] c\"%d\\00\"\n";
+        text += "@doubleToFloat = global double 0.0\n";
         text += getEmittedCode();
         text += "define i32 @main() nounwind{\n";
         text += "%res = call i32 @Maine()\n";

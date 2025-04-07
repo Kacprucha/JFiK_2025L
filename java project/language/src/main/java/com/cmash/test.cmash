@@ -1,8 +1,10 @@
 int Maine () {
 int MyInt = 1
-double MyDouble = 1.2
-print(MyInt)
-print(MyDouble)
+    double MyDouble = 6.9
+    float MyFloat = 1.2
+    print(MyInt)
+    print(MyDouble)
+    print(MyFloat)
 
-return 0
+    return 0
 }
