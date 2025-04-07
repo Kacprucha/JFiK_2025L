@@ -428,7 +428,7 @@ public class LLVMAction extends CmashBaseListener {
             }
         }
         
-        System.out.println(result.llvmType + " " + result.register);
+        System.out.println(";" + result.llvmType + " " + result.register);
         values.put(ctx, result);
     }
 
@@ -811,7 +811,7 @@ public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
                 } else if (arg.llvmType.equals("float")) {
                     formatStr = "@strf";  // use float format
                 } else if (arg.llvmType.equals("double")) {
-                    formatStr = "@strf"; // use double format
+                    formatStr = "@strlf"; // use double format
                 } else if (arg.llvmType.equals("i8*")) {
                     formatStr = "@strs";  // use string format
                 } else {
@@ -831,7 +831,7 @@ public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
                 else
                     gepSize = "4";
             
-                String callInstr = "call i32 @printf(i8* getelementptr inbounds ([" + gepSize + " x i8], [" + gepSize + " x i8]* " 
+                String callInstr = "call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([" + gepSize + " x i8], [" + gepSize + " x i8]* " 
                                     + formatStr + ", i32 0, i32 0), " 
                                     + arg.llvmType + " " + arg.register + ")";
                 LLVMGenerator.emit(callInstr);

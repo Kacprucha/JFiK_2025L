@@ -83,14 +83,14 @@ class LLVMGenerator {
     public static String generate(){
         String text = "";
         text += "declare i32 @printf(i8*, ...)\n";
-        text += "declare i32 @__isoc99_scanf(i8*, ...)\n";
+        text += "declare i32 @scanf(i8*, ...)\n";
         text += "@strp = constant [4 x i8] c\"%d\\0A\\00\"\n";
         text += "@strs = constant [4 x i8] c\"%s\\0A\\00\" \n";
         text += "@strpi = constant [4 x i8] c\"%d\\0A\\00\"\n";
         text += "@strpd = constant [4 x i8] c\"%f\\0A\\00\"\n";
         text += "@strd = constant [4 x i8] c\"%d\\0A\\00\"\n";
         text += "@strf = constant [4 x i8] c\"%f\\0A\\00\"\n";
-        text += "@strlf = constant [5 x i8] c\"%lf\\0A\\00\"\n";
+        text += "@strlf = constant [5 x i8] c\"%lf\\0A\\00\", align 1\n";
         text += "@strs_in = constant [3 x i8] c\"%d\\00\"\n";
         text += getEmittedCode();
         text += "define i32 @main() nounwind{\n";

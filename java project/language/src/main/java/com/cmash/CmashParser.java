@@ -2861,7 +2861,7 @@ public class CmashParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_ioStatement; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof CmashListener ) ((CmashListener)listener).enterIoStatement(this);
+			if ( listener instanceof CmashListener )  ((CmashListener)listener).enterIoStatement(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {

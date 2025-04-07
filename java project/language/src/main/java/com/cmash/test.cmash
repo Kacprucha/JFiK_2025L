@@ -1,8 +1,8 @@
 int Maine () {
-    int MyInt = 1
-    double MyDouble = 4.98
-    print(MyInt)
-    print(MyDouble)
+int MyInt = 1
+double MyDouble = 1.2
+print(MyInt)
+print(MyDouble)
 
-    return 0
+return 0
 }
