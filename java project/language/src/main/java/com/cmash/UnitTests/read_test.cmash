@@ -1,0 +1,17 @@
+int Maine () {
+    
+    int MyInt = 1
+    double MyDouble = 3.0
+    float MyFloat = 1.0
+    
+    read(MyInt)
+    print(MyInt)
+
+    read(MyDouble)
+    print(MyDouble)
+
+    read(MyFloat)
+    print(MyFloat)
+
+    return 0
+}

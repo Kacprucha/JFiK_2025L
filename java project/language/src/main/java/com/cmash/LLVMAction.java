@@ -136,6 +136,22 @@ public class LLVMAction extends CmashBaseListener {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override public void enterArrayDeclaration(CmashParser.ArrayDeclarationContext ctx) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+	@Override public void exitArrayDeclaration(CmashParser.ArrayDeclarationContext ctx) { 
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+	@Override public void enterMatrixDeclaration(CmashParser.MatrixDeclarationContext ctx) {
+        throw new UnsupportedOperationException("Not supported yet.");
+     }
+
+	@Override public void exitMatrixDeclaration(CmashParser.MatrixDeclarationContext ctx) { 
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
     @Override
     public void exitVariableList(CmashParser.VariableListContext ctx) {
         // Create a list to collect the names of the variables declared in this list.
@@ -314,6 +330,14 @@ public class LLVMAction extends CmashBaseListener {
     // Store the computed LLVM type in the shared values map.
     // Here we store it in both fields of ValueAndType.
     values.put(ctx, new ValueAndType(llvmType, llvmType));
+    }
+
+    @Override public void enterNumericalType(CmashParser.NumericalTypeContext ctx) { 
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+	@Override public void exitNumericalType(CmashParser.NumericalTypeContext ctx) { 
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
@@ -746,6 +770,14 @@ public class LLVMAction extends CmashBaseListener {
 
     @Override
     public void exitArrayAccess(CmashParser.ArrayAccessContext ctx) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override public void enterMatrixAccess(CmashParser.MatrixAccessContext ctx) { 
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+	@Override public void exitMatrixAccess(CmashParser.MatrixAccessContext ctx) { 
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

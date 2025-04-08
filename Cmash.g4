@@ -11,8 +11,8 @@ program
 declaration
     : type variableList END_OF_LINE?
     | stringDeclaration
-    | type ID arraySize (arraySize)* ('=' '[' values ']')? END_OF_LINE?
-    | type ID matrixSize ('=' '<' matrixRow (';' matrixRow)* '>')? END_OF_LINE?
+    | matrixDeclaration
+    | arrayDeclaration
     ;
 
 // Helper for matrixes and arrays declaration
@@ -46,6 +46,14 @@ stringDeclaration
     : 'string' arraySize ID ( '=' PLAIN_TEXT )? END_OF_LINE?
     ;
 
+arrayDeclaration
+    : type ID arraySize (arraySize)* ('=' '[' values ']')? END_OF_LINE?
+    ;
+
+matrixDeclaration
+    : numericalType ID matrixSize ('=' '<' matrixRow (';' matrixRow)* '>')? END_OF_LINE?
+    ;
+
 variableList
     : variable (',' variable)*   // Multiple variables
     ;
@@ -56,7 +64,7 @@ variable
 
 // A function definition (e.g., int main() { ... }).
 functionDefinition
-    : type ID '(' parameters? ')' compoundStatement
+    : (type || 'void') ID '(' parameters? ')' compoundStatement
     ;
 
 // Structure Definitions
@@ -74,17 +82,23 @@ structMember
     : type ID END_OF_LINE?
     ;
 
-// Rule to define the type keywords (only a few types for simplicity).
+// variable types
 type
     : 'int'
     | 'float'
-    | 'void'
     | 'char'
     | 'double'
     | 'bool'
     | 'struct' ID
     | 'string' '[' INT ']' 
     ;
+
+numericalType
+    : 'int'
+    | 'float'
+    | 'double'
+    ;
+
 
 // Function parameters list (comma-separated).
 parameters
@@ -136,6 +150,7 @@ expression
     | functionCall
     | fieldAccess
     | arrayAccess
+    | matrixAccess
     ;
 
 // Assignment can either be an assignment or fall back to equality.
@@ -192,7 +207,11 @@ numbers
     ;
 
 arrayAccess
-    : ID '[' expression ']'* END_OF_LINE?
+    : ID '[' INT ']'* END_OF_LINE?
+    ;
+
+matrixAccess
+    : ID ('<' INT '>')* END_OF_LINE?
     ;
 
 // An if-statement with optional else.
