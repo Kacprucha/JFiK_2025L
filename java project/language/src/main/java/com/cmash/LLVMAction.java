@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 public class LLVMAction extends CmashBaseListener {
 
@@ -118,39 +120,141 @@ public class LLVMAction extends CmashBaseListener {
 
     @Override
     public void exitArraySize(CmashParser.ArraySizeContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void exitMatrixSize(CmashParser.MatrixSizeContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void exitMatrixRow(CmashParser.MatrixRowContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void exitStringDeclaration(CmashParser.StringDeclarationContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        String varName = ctx.ID().getText();
+        String strContent = ctx.PLAIN_TEXT() != null 
+            ? ctx.PLAIN_TEXT().getText().substring(1, ctx.PLAIN_TEXT().getText().length() - 1)
+            : "";
+    
+        int arraySize = strContent.length() + 1;
+    
+        String escapedStr = strContent.replace("\\", "\\\\")
+                                      .replace("\n", "\\0A")
+                                      .replace("\t", "\\09")
+                                      .replace("\"", "\\22");
+    
+        if (inFunction) {
+            // Local variable: use memcpy to initialize stack allocation
+            String globalStrName = "@." + varName + "_str";
+            LLVMGenerator.emitGlobal(globalStrName + " = constant [" + arraySize + " x i8] c\"" + escapedStr + "\\00\"");
+    
+            String ptrReg = "%" + varName;
+            LLVMGenerator.emit(ptrReg + " = alloca [" + arraySize + " x i8], align 1");
+            
+            // Emit memcpy to copy from global to stack
+            String destCast = LLVMGenerator.newTempReg();
+            String srcCast = LLVMGenerator.newTempReg();
+            LLVMGenerator.emit(destCast + " = bitcast [" + arraySize + " x i8]* " + ptrReg + " to i8*");
+            LLVMGenerator.emit(srcCast + " = bitcast [" + arraySize + " x i8]* " + globalStrName + " to i8*");
+            LLVMGenerator.emit("call void @llvm.memcpy.p0i8.p0i8.i64(i8* " + destCast + ", i8* " + srcCast + 
+                              ", i64 " + arraySize + ", i1 false)");
+            
+            localVars.put(varName, new VariableInfo(ptrReg, "[" + arraySize + " x i8]*"));
+        } else {
+            // Global variable
+            LLVMGenerator.emitGlobal("@" + varName + " = constant [" + arraySize + " x i8] c\"" + escapedStr + "\\00\"");
+            globalVars.put(varName, new VariableInfo("@" + varName, "[" + arraySize + " x i8]"));
+        }
     }
 
-    @Override public void enterArrayDeclaration(CmashParser.ArrayDeclarationContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+    @Override 
+    public void exitArrayDeclaration(CmashParser.ArrayDeclarationContext ctx) {
+        String type = mapType(ctx.type().getText());
+        String varName = ctx.ID().getText();
+        List<Integer> dimensions = new ArrayList<>();
+        
+        // Get dimensions from arraySize rules
+        for (CmashParser.ArraySizeContext sizeCtx : ctx.arraySize()) {
+            dimensions.add(Integer.parseInt(sizeCtx.INT().getText()));
+        }
+        
+        // Build LLVM array type (e.g. [5 x [10 x i32]])
+        String llvmType = dimensions.reversed().stream()
+            .map(size -> "[" + size + " x ")
+            .collect(Collectors.joining()) + type + "]".repeat(dimensions.size());
+            
+        // Handle initialization
+        String init = "zeroinitializer";
+        if (ctx.values() != null) {
+            // Get the ValuesContext (contains all value elements)
+            CmashParser.ValuesContext valuesCtx = ctx.values();
 
-	@Override public void exitArrayDeclaration(CmashParser.ArrayDeclarationContext ctx) { 
-        throw new UnsupportedOperationException("Not supported yet.");
+            // Extract ValueAndType for EACH value in the values rule
+            List<ValueAndType> arrayElements = valuesCtx.value().stream() // Iterate over each value
+                .map(valueCtx -> values.get(valueCtx)) // Get ValueAndType for each value
+                .collect(Collectors.toList());
+
+            // Build the LLVM array initialization string
+            init = "[" + arrayElements.stream()
+                .map(v -> v.llvmType + " " + v.register) // Use fields from ValueAndType
+                .collect(Collectors.joining(", ")) + "]";
+        }
+
+        if (inFunction) {
+            String ptrReg = "%" + varName;
+            LLVMGenerator.emit(ptrReg + " = alloca " + llvmType);
+            localVars.put(varName, new VariableInfo(ptrReg, llvmType + "*"));
+        } else {
+            LLVMGenerator.declareGlobalArray(varName, llvmType, init);
+            globalVars.put(varName, new VariableInfo("@" + varName, llvmType));
+        }
     }
 
 	@Override public void enterMatrixDeclaration(CmashParser.MatrixDeclarationContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        //throw new UnsupportedOperationException("Not supported yet.");
      }
 
-	@Override public void exitMatrixDeclaration(CmashParser.MatrixDeclarationContext ctx) { 
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+     @Override
+     public void exitMatrixDeclaration(CmashParser.MatrixDeclarationContext ctx) {
+         String type = mapType(ctx.numericalType().getText());
+         String varName = ctx.ID().getText();
+         List<Integer> dims = ctx.matrixSize().INT().stream()
+             .map(t -> Integer.parseInt(t.getText()))
+             .collect(Collectors.toList());
+             
+         // Build LLVM type (e.g. <2 x <3 x float>>)
+         String llvmType = dims.reversed().stream()
+             .map(d -> "[" + d + " x ")
+             .collect(Collectors.joining()) + type + "]".repeat(dims.size());
+         
+         // Handle initialization
+         String init = "zeroinitializer";
+         if (ctx.matrixRow() != null) {
+            List<String> rows = ctx.matrixRow().stream()
+            .map(row -> {
+                // Access the NUMBERS in the matrixRow rule
+                List<String> numbers = row.numbers().stream()
+                    .map(numberCtx -> numberCtx.getText()) // Get text of each number
+                    .collect(Collectors.toList());
+
+                return "[" + String.join(", ", numbers) + "]";
+            })
+            .collect(Collectors.toList());
+         }
+     
+         if (inFunction) {
+             String ptrReg = "%" + varName;
+             LLVMGenerator.emit(ptrReg + " = alloca " + llvmType);
+             localVars.put(varName, new VariableInfo(ptrReg, llvmType + "*"));
+         } else {
+             LLVMGenerator.declareGlobalMatrix(varName, llvmType, init);
+             globalVars.put(varName, new VariableInfo("@" + varName, llvmType));
+         }
+     }
 
     @Override
     public void exitVariableList(CmashParser.VariableListContext ctx) {
@@ -333,11 +437,11 @@ public class LLVMAction extends CmashBaseListener {
     }
 
     @Override public void enterNumericalType(CmashParser.NumericalTypeContext ctx) { 
-        throw new UnsupportedOperationException("Not supported yet.");
+        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
 	@Override public void exitNumericalType(CmashParser.NumericalTypeContext ctx) { 
-        throw new UnsupportedOperationException("Not supported yet.");
+        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
@@ -770,7 +874,25 @@ public class LLVMAction extends CmashBaseListener {
 
     @Override
     public void exitArrayAccess(CmashParser.ArrayAccessContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        String varName = ctx.ID().getText();
+        String indices = ctx.INT().getText();
+        
+        // Look up the variable pointer in localVars (if inside a function) or globalVars.
+        VariableInfo varInfo = inFunction ? localVars.get(varName) : globalVars.get(varName);
+        if (varInfo == null) {
+            System.err.println("Error: variable " + varName + " is not declared.");
+            return;
+        }
+
+        String elementPtr = LLVMGenerator.newTempReg();
+        
+        // Build GEP instruction
+        String gep = "getelementptr inbounds " + varInfo.llvmType.replace("*", "") + 
+            ", " + varInfo.llvmType + " " + varInfo.pointerName + 
+            ", i32 0" + indices;
+        
+        LLVMGenerator.emit(elementPtr + " = " + gep);
+        values.put(ctx, new ValueAndType(elementPtr, varInfo.llvmType.replace("*", "").replace("[", "").split(" x ")[0]));
     }
 
     @Override public void enterMatrixAccess(CmashParser.MatrixAccessContext ctx) { 

@@ -43,7 +43,7 @@ matrixRow
 
 // A string declaration with fixed length.
 stringDeclaration
-    : 'string' arraySize ID ( '=' PLAIN_TEXT )? END_OF_LINE?
+    : 'string' ID ( '=' PLAIN_TEXT )? END_OF_LINE?
     ;
 
 arrayDeclaration
@@ -90,7 +90,7 @@ type
     | 'double'
     | 'bool'
     | 'struct' ID
-    | 'string' '[' INT ']' 
+    | 'string'
     ;
 
 numericalType
