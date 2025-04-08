@@ -85,25 +85,16 @@ class LLVMGenerator {
 
     public static void FloatValueStore(String localPtr, ValueAndType initVal)
     {
-        try {
-            //Check if value is a double or register
-            float number = Float.parseFloat(initVal.register);
+        String doubleTemp = LLVMGenerator.newTempReg();
+        String floatTemp = LLVMGenerator.newTempReg();
 
-            String doubleTemp = LLVMGenerator.newTempReg();
-            String floatTemp = LLVMGenerator.newTempReg();
-
-            // Save given constant under global variable
-            LLVMGenerator.emit("store double " + initVal.register + " , double* @doubleToFloat\n");
-            // Load given variable
-            LLVMGenerator.emit(doubleTemp + "= load double, double* @doubleToFloat\n");
-            // Perform truncating 
-            LLVMGenerator.emit(floatTemp + "= fptrunc double " + doubleTemp + " to float");
-            LLVMGenerator.emit("store float " + floatTemp+ ", float* " + localPtr + "\n");
-
-
-        } catch (NumberFormatException e) {
-            LLVMGenerator.emit("store float " + initVal.register + ", float* " + localPtr);
-        }
+        // Save given constant under global variable
+        LLVMGenerator.emit("store double " + initVal.register + " , double* @doubleToFloat\n");
+        // Load given variable
+        LLVMGenerator.emit(doubleTemp + "= load double, double* @doubleToFloat\n");
+        // Perform truncating 
+        LLVMGenerator.emit(floatTemp + "= fptrunc double " + doubleTemp + " to float");
+        LLVMGenerator.emit("store float " + floatTemp+ ", float* " + localPtr + "\n");
     }
 
     public static String FloatToDouble(String localPtr)
