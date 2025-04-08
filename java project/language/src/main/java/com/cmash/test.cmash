@@ -2,16 +2,12 @@ int Maine () {
     
     int MyInt = 1
     double MyDouble = 3.0
-    float MyFloat = 1.0
-    
-    read(MyInt)
-    print(MyInt)
+    double MyFloat = 7.0
+    double Float2 = 2.0
 
-    read(MyDouble)
-    print(MyDouble)
+    float Float3 = 7.0f + 0.2f
 
-    read(MyFloat)
-    print(MyFloat)
+    print(Float3)
 
     return 0
 }

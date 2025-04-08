@@ -13,14 +13,28 @@ public class Main {
         CmashLexer lexer = new CmashLexer (input);
         CommonTokenStream tokens = new CommonTokenStream (lexer);
         CmashParser parser = new CmashParser (tokens);
+
+        // Instantiate custom error listener
+        CustomErrorListener errorListener = new CustomErrorListener();
+
+        // Remove the default error listeners
+        lexer.removeErrorListeners();
+        parser.removeErrorListeners();
         
-        // (Optional) Set up error listeners here
+        // Attach custom error listener to both lexer and parser
+        lexer.addErrorListener(errorListener);
+        parser.addErrorListener(errorListener);
+        
         
         // Parse starting from 'program'
         ParseTree tree = parser.program ();
+
+        // Check if any errors were recorded; if yes, display them and halt further processing
+        if (!errorListener.getErrors().isEmpty()) {
+            System.exit(1);
+        }
         
         // Walk the parse tree using a custom listener or visitor
-
         ParseTreeWalker walker = new ParseTreeWalker();
         walker.walk(new LLVMAction(), tree);
     }
