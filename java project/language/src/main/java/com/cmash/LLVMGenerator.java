@@ -1,6 +1,7 @@
 package com.cmash;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 class LLVMGenerator {
     private static StringBuilder globalBuilder = new StringBuilder();
@@ -77,6 +78,29 @@ class LLVMGenerator {
         return name;
     }
 
+    // String utilities
+    public static String newGlobalString(String text, int size) {
+        String name = "@.str" + (stringCount++);
+        String escaped = text.chars()
+            .mapToObj(c -> (c < 128) ? String.format("\\%02X", c) : "")
+            .collect(Collectors.joining());
+        emitGlobal(name + " = constant [" + size + " x i8] c\"" + escaped + "\\00\"");
+        return name;
+    }
+
+    public static void declareGlobalString(String name, int size, String init) {
+        emitGlobal("@" + name + " = global [" + size + " x i8] c\"" + init + "\\00\"");
+    }
+
+    // Array/matrix support
+    public static void declareGlobalArray(String name, String type, String init) {
+        emitGlobal("@" + name + " = global " + type + " " + init);
+    }
+
+    public static void declareGlobalMatrix(String name, String type, String init) {
+        emitGlobal("@" + name + " = global " + type + " " + init);
+    }
+
     public static String loadValue(String llvmType, String pointer) {
         String tmpReg = newTempReg();
         emit(tmpReg + " = load " + llvmType + ", " + llvmType + "* " + pointer);
@@ -107,6 +131,7 @@ class LLVMGenerator {
 
     public static String generate(){
         String text = "";
+        text += "declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1 immarg)\n";
         text += "declare i32 @printf(i8*, ...)\n";
         text += "declare i32 @scanf(i8*, ...)\n";
         text += "@strp = constant [4 x i8] c\"%d\\0A\\00\"\n";
@@ -121,6 +146,8 @@ class LLVMGenerator {
         text += "@strd_in = constant [3 x i8] c\"%d\\00\" \n";   //For integers (i32)
         text += "@strf_in = constant [3 x i8] c\"%f\\00\" \n";  // For floats (float)
         text += "@strlf_in = constant [4 x i8] c\"%lf\\00\" \n";  //For doubles (double)
+        text += "@space = constant [2 x i8] c\" \\00\"\n";
+        text += "@newline = constant [2 x i8] c\"\\0A\\00\"\n";
         text += "@doubleToFloat = global double 0.0\n";
         text += getEmittedCode();
         text += "define i32 @main() nounwind{\n";

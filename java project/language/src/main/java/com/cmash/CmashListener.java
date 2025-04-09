@@ -88,6 +88,26 @@ public interface CmashListener extends ParseTreeListener {
 	 */
 	void exitStringDeclaration(CmashParser.StringDeclarationContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link CmashParser#arrayDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterArrayDeclaration(CmashParser.ArrayDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmashParser#arrayDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitArrayDeclaration(CmashParser.ArrayDeclarationContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmashParser#matrixDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterMatrixDeclaration(CmashParser.MatrixDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmashParser#matrixDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitMatrixDeclaration(CmashParser.MatrixDeclarationContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link CmashParser#variableList}.
 	 * @param ctx the parse tree
 	 */
@@ -157,6 +177,16 @@ public interface CmashListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitType(CmashParser.TypeContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmashParser#numericalType}.
+	 * @param ctx the parse tree
+	 */
+	void enterNumericalType(CmashParser.NumericalTypeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmashParser#numericalType}.
+	 * @param ctx the parse tree
+	 */
+	void exitNumericalType(CmashParser.NumericalTypeContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link CmashParser#parameters}.
 	 * @param ctx the parse tree
@@ -317,6 +347,16 @@ public interface CmashListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitArrayAccess(CmashParser.ArrayAccessContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmashParser#matrixAccess}.
+	 * @param ctx the parse tree
+	 */
+	void enterMatrixAccess(CmashParser.MatrixAccessContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmashParser#matrixAccess}.
+	 * @param ctx the parse tree
+	 */
+	void exitMatrixAccess(CmashParser.MatrixAccessContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link CmashParser#selectionStatement}.
 	 * @param ctx the parse tree

@@ -113,6 +113,30 @@ public class CmashBaseListener implements CmashListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterArrayDeclaration(CmashParser.ArrayDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitArrayDeclaration(CmashParser.ArrayDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterMatrixDeclaration(CmashParser.MatrixDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMatrixDeclaration(CmashParser.MatrixDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterVariableList(CmashParser.VariableListContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -192,6 +216,18 @@ public class CmashBaseListener implements CmashListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitType(CmashParser.TypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterNumericalType(CmashParser.NumericalTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitNumericalType(CmashParser.NumericalTypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -384,6 +420,18 @@ public class CmashBaseListener implements CmashListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitArrayAccess(CmashParser.ArrayAccessContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterMatrixAccess(CmashParser.MatrixAccessContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitMatrixAccess(CmashParser.MatrixAccessContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
