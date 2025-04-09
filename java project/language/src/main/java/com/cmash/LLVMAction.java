@@ -4,13 +4,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 public class LLVMAction extends CmashBaseListener {
 
     private boolean inFunction = false;
+    private static int matrixConstCounter = 0;  // Add this at the class level
     
     // Map variable names -> info. 
     // For local variables, pointerName will be something like "%x.addr"
@@ -118,23 +121,186 @@ public class LLVMAction extends CmashBaseListener {
 
     @Override
     public void exitArraySize(CmashParser.ArraySizeContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void exitMatrixSize(CmashParser.MatrixSizeContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void exitMatrixRow(CmashParser.MatrixRowContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void exitStringDeclaration(CmashParser.StringDeclarationContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        String varName = ctx.ID().getText();
+        String strContent = ctx.PLAIN_TEXT() != null 
+            ? ctx.PLAIN_TEXT().getText().substring(1, ctx.PLAIN_TEXT().getText().length() - 1)
+            : "";
+    
+        int arraySize = strContent.length() + 1;
+    
+        String escapedStr = strContent.replace("\\", "\\\\")
+                                      .replace("\n", "\\0A")
+                                      .replace("\t", "\\09")
+                                      .replace("\"", "\\22");
+    
+        if (inFunction) {
+            // Local variable: use memcpy to initialize stack allocation
+            String globalStrName = "@." + varName + "_str";
+            LLVMGenerator.emitGlobal(globalStrName + " = constant [" + arraySize + " x i8] c\"" + escapedStr + "\\00\"");
+    
+            String ptrReg = "%" + varName;
+            LLVMGenerator.emit(ptrReg + " = alloca [" + arraySize + " x i8], align 1");
+            
+            // Emit memcpy to copy from global to stack
+            String destCast = LLVMGenerator.newTempReg();
+            String srcCast = LLVMGenerator.newTempReg();
+            LLVMGenerator.emit(destCast + " = bitcast [" + arraySize + " x i8]* " + ptrReg + " to i8*");
+            LLVMGenerator.emit(srcCast + " = bitcast [" + arraySize + " x i8]* " + globalStrName + " to i8*");
+            LLVMGenerator.emit("call void @llvm.memcpy.p0i8.p0i8.i64(i8* " + destCast + ", i8* " + srcCast + 
+                              ", i64 " + arraySize + ", i1 false)");
+            
+            localVars.put(varName, new VariableInfo(ptrReg, "[" + arraySize + " x i8]*"));
+        } else {
+            // Global variable
+            LLVMGenerator.emitGlobal("@" + varName + " = constant [" + arraySize + " x i8] c\"" + escapedStr + "\\00\"");
+            globalVars.put(varName, new VariableInfo("@" + varName, "[" + arraySize + " x i8]"));
+        }
     }
+
+    @Override 
+    public void exitArrayDeclaration(CmashParser.ArrayDeclarationContext ctx) {
+        String type = mapType(ctx.type().getText());
+        String varName = ctx.ID().getText();
+        List<Integer> dimensions = new ArrayList<>();
+        
+        // Get dimensions from arraySize rules
+        for (CmashParser.ArraySizeContext sizeCtx : ctx.arraySize()) {
+            dimensions.add(Integer.parseInt(sizeCtx.INT().getText()));
+        }
+        
+        // Build LLVM array type (e.g. [5 x [10 x i32]])
+        String llvmType = dimensions.reversed().stream()
+            .map(size -> "[" + size + " x ")
+            .collect(Collectors.joining()) + type + "]".repeat(dimensions.size());
+            
+        // Handle initialization
+        String init = "zeroinitializer";
+        if (ctx.values() != null) {
+            // Get the ValuesContext (contains all value elements)
+            CmashParser.ValuesContext valuesCtx = ctx.values();
+
+            // Extract ValueAndType for EACH value in the values rule
+            List<ValueAndType> arrayElements = valuesCtx.value().stream() // Iterate over each value
+                .map(valueCtx -> values.get(valueCtx)) // Get ValueAndType for each value
+                .collect(Collectors.toList());
+
+            // Build the LLVM array initialization string
+            init = "[" + arrayElements.stream()
+                .map(v -> v.llvmType + " " + v.register) // Use fields from ValueAndType
+                .collect(Collectors.joining(", ")) + "]";
+        }
+
+        if (inFunction) {
+            String ptrReg = "%" + varName;
+            LLVMGenerator.emit(ptrReg + " = alloca " + llvmType);
+            localVars.put(varName, new VariableInfo(ptrReg, llvmType + "*"));
+        } else {
+            LLVMGenerator.declareGlobalArray(varName, llvmType, init);
+            globalVars.put(varName, new VariableInfo("@" + varName, llvmType));
+        }
+    }
+
+	@Override public void enterMatrixDeclaration(CmashParser.MatrixDeclarationContext ctx) {
+        //throw new UnsupportedOperationException("Not supported yet.");
+     }
+
+     @Override
+     public void exitMatrixDeclaration(CmashParser.MatrixDeclarationContext ctx) {
+        String type = mapType(ctx.numericalType().getText());
+        String varName = ctx.ID().getText();
+        List<Integer> dims = ctx.matrixSize().INT().stream()
+            .map(t -> Integer.parseInt(t.getText()))
+            .collect(Collectors.toList());
+    
+        // Validate matrix dimensions
+        if (dims.size() < 2) {
+            throw new RuntimeException("Matrix '" + varName + "' must have 2 dimensions (e.g., <rows,cols>)");
+        }
+        int declaredRows = dims.get(0);
+        int declaredCols = dims.get(1);
+    
+        String llvmType = dims.stream()
+            .map(d -> "[" + d + " x ")
+            .collect(Collectors.joining()) + type + "]".repeat(dims.size());
+    
+        String init = "zeroinitializer";
+        List<String> rows = new ArrayList<>();
+    
+        if (ctx.matrixRow() != null) {
+            // Validate row count
+            
+            int actualRows = ctx.matrixRow().size();
+            if (actualRows != declaredRows) {
+                throw new RuntimeException("Matrix '" + varName + "' expects " + declaredRows + 
+                    " rows, but found " + actualRows);
+            }
+    
+            // Process each row
+            for (CmashParser.MatrixRowContext rowCtx : ctx.matrixRow()) {
+                List<CmashParser.NumbersContext> numbers = rowCtx.numbers();
+                // Validate column count per row
+                if (numbers.size() != declaredCols) {
+                    throw new RuntimeException("Matrix '" + varName + "' expects " + declaredCols + 
+                        " columns, but found " + numbers.size() + " in row: " + rowCtx.getText());
+                }
+                // Process elements
+                List<String> elements = numbers.stream()
+                    .map(numCtx -> {
+                        ValueAndType vat = values.get(numCtx);
+                        return (vat != null) ? vat.llvmType + " " + vat.register : type + " 0";
+                    })
+                    .collect(Collectors.toList());
+                String rowType = "[" + declaredCols + " x " + type + "]";
+                rows.add(rowType + " [" + String.join(", ", elements) + "]"); // 
+                
+            }
+            init = "[" + String.join(", ", rows) + "]";
+        }
+     
+         if (inFunction) {
+            String ptrReg = "%" + varName;
+            LLVMGenerator.emit(ptrReg + " = alloca " + llvmType);
+            
+                // Generate unique global name to avoid duplicates
+                String globalName = "@__const." + varName + "." + (matrixConstCounter++);
+                LLVMGenerator.emitGlobal(globalName + " = constant " + llvmType + " " + init);
+                
+                String destCast = LLVMGenerator.newTempReg();
+                String srcCast = LLVMGenerator.newTempReg();
+                LLVMGenerator.emit(destCast + " = bitcast " + llvmType + "* " + ptrReg + " to i8*");
+                LLVMGenerator.emit(srcCast + " = bitcast " + llvmType + "* " + globalName + " to i8*");
+                LLVMGenerator.emit("call void @llvm.memcpy.p0i8.p0i8.i64(i8* " + destCast + ", i8* " + srcCast + 
+                                ", i64 " + getMatrixSize(dims, type) + ", i1 false)");
+             
+             localVars.put(varName, new VariableInfo(ptrReg, llvmType + "*"));
+         } else {
+             LLVMGenerator.declareGlobalMatrix(varName, llvmType, init);
+             globalVars.put(varName, new VariableInfo("@" + varName, llvmType));
+         }
+     }
+     
+     private long getMatrixSize(List<Integer> dims, String elementType) {
+         long elements = dims.stream().reduce(1, (a, b) -> a * b);
+         int elementSize = elementType.equals("i32") ? 4 : 
+                          elementType.equals("float") ? 4 : 
+                          elementType.equals("double") ? 8 : 4;
+         return elements * elementSize;
+     }
 
     @Override
     public void exitVariableList(CmashParser.VariableListContext ctx) {
@@ -314,6 +480,14 @@ public class LLVMAction extends CmashBaseListener {
     // Store the computed LLVM type in the shared values map.
     // Here we store it in both fields of ValueAndType.
     values.put(ctx, new ValueAndType(llvmType, llvmType));
+    }
+
+    @Override public void enterNumericalType(CmashParser.NumericalTypeContext ctx) { 
+        //throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+	@Override public void exitNumericalType(CmashParser.NumericalTypeContext ctx) { 
+        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
@@ -741,11 +915,52 @@ public class LLVMAction extends CmashBaseListener {
 
     @Override
     public void exitNumbers(CmashParser.NumbersContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (ctx.INT() != null) {
+            values.put(ctx, new ValueAndType(ctx.INT().getText(), "i32"));
+        } else if (ctx.FLOAT() != null) {
+            String floatText = ctx.FLOAT().getText();
+            // Remove trailing 'f' or 'F'
+            if (floatText.endsWith("f") || floatText.endsWith("F")) {
+                floatText = floatText.substring(0, floatText.length() - 1);
+            }
+            float value = Float.parseFloat(floatText);
+            int bits = Float.floatToIntBits(value);
+            String formatted = "0x" + String.format("%08X", bits);
+            values.put(ctx, new ValueAndType(formatted, "float"));
+        } else if (ctx.DOUBLE() != null) {
+            String doubleText = ctx.DOUBLE().getText();
+            values.put(ctx, new ValueAndType(doubleText, "double"));
+        }
     }
 
     @Override
     public void exitArrayAccess(CmashParser.ArrayAccessContext ctx) {
+        String varName = ctx.ID().getText();
+        String indices = ctx.INT().getText();
+        
+        // Look up the variable pointer in localVars (if inside a function) or globalVars.
+        VariableInfo varInfo = inFunction ? localVars.get(varName) : globalVars.get(varName);
+        if (varInfo == null) {
+            System.err.println("Error: variable " + varName + " is not declared.");
+            return;
+        }
+
+        String elementPtr = LLVMGenerator.newTempReg();
+        
+        // Build GEP instruction
+        String gep = "getelementptr inbounds " + varInfo.llvmType.replace("*", "") + 
+            ", " + varInfo.llvmType + " " + varInfo.pointerName + 
+            ", i32 0" + indices;
+        
+        LLVMGenerator.emit(elementPtr + " = " + gep);
+        values.put(ctx, new ValueAndType(elementPtr, varInfo.llvmType.replace("*", "").replace("[", "").split(" x ")[0]));
+    }
+
+    @Override public void enterMatrixAccess(CmashParser.MatrixAccessContext ctx) { 
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+	@Override public void exitMatrixAccess(CmashParser.MatrixAccessContext ctx) { 
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -806,6 +1021,35 @@ public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
     @Override
     public void enterIoStatement(CmashParser.IoStatementContext ctx) {
         LLVMGenerator.emit("; Entering IO statement");
+    }
+
+    private void generateMatrixPrintLoops(VariableInfo matrixVar, String matrixType, List<Integer> dims, String elementType) {
+        String ptrReg = matrixVar.pointerName;
+        List<String> indices = new ArrayList<>();
+        List<String> loopLabels = new ArrayList<>();
+    
+        // Generate GEP indices and loop labels for each dimension
+        for (int i = 0; i < dims.size(); i++) {
+            String idxReg = LLVMGenerator.newTempReg();
+            String loopStart = LLVMGenerator.newLabel();
+            String loopEnd = LLVMGenerator.newLabel();
+            loopLabels.add(loopStart);
+            loopLabels.add(loopEnd);
+    
+            // Initialize index variable
+            LLVMGenerator.emit(idxReg + " = alloca i32");
+            LLVMGenerator.emit("store i32 0, i32* " + idxReg);
+            indices.add(idxReg);
+    
+            // Loop header
+            LLVMGenerator.emit("br label %" + loopStart);
+            LLVMGenerator.emit(loopStart + ":");
+            String currentIdx = LLVMGenerator.loadValue("i32", idxReg);
+            String cmpReg = LLVMGenerator.newTempReg();
+            LLVMGenerator.emit(cmpReg + " = icmp slt i32 " + currentIdx + ", " + dims.get(i));
+            String exitLabel = (i == dims.size() - 1) ? loopLabels.get(loopLabels.size() - 1) : loopLabels.get(loopLabels.size() - 2);
+            LLVMGenerator.emit("br i1 " + cmpReg + ", label %" + loopLabels.get(loopLabels.size() - 2) + ", label %" + exitLabel);
+        }
     }
 
     @Override
