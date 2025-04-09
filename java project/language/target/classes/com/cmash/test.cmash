@@ -1,10 +1,53 @@
-int Maine () {
-    
-    int X<3, 2> = <4, 1; 2, 1; 3, 1>
+int Main () {
 
-    int Y = 2
-    read(Y)
-    print(Y)
+    bool MyBool0 = 0
+    int MyInt = 1
+    float MyFloat = 1.2
+    double MyDouble = 4.32
+
+    print(MyBool0)
+    print(MyInt)
+    print(MyFloat)
+    print(MyDouble)
+
+    print("Pass int:")
+    read(MyInt)
+    print(MyInt)
+
+    print("(2 + 2 * 2) / 3 =")
+    MyInt = (2 + 2 * 2) / 3
+    print(MyInt)
+
+    int Macierz<3, 2> = <4, 1; 2, 1; 3, 1>
+    double Tablica[4]
+    string Napis = "napis"
+
+    bool MyBool1 = 1
+    bool Result
+
+    print("We have two bools:")
+    print(MyBool0)
+    print(MyBool1)
+
+    print("Lets make on them and operation:")
+    Result = MyBool0 && MyBool1
+    print(Result)
+
+    print("Lets make on them or operation:")
+    Result = MyBool0 || MyBool1
+    print(Result)
+
+    print("Lets make on them xor operation:")
+    Result = MyBool0 ^ MyBool1
+    print(Result)
+
+    print("Lets make neg first bool:")
+    MyBool0 = !MyBool0
+    print(MyBool0)
+
+    print("And once again lets make on them xor operation:")
+    Result = MyBool0 ^ MyBool1
+    print(Result)
 
     return 0
 }

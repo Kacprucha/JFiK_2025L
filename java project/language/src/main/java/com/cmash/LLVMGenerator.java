@@ -168,7 +168,7 @@ class LLVMGenerator {
         text += "@doubleToFloat = global double 0.0\n";
         text += getEmittedCode();
         text += "define i32 @main() nounwind{\n";
-        text += "%res = call i32 @Maine()\n";
+        text += "%res = call i32 @Main()\n";
         text += "ret i32 0 }\n";
         return text;
      }
