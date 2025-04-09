@@ -88,21 +88,16 @@ public class LLVMAction extends CmashBaseListener {
         if (ctx.type() != null && ctx.variableList() != null) {
             // Retrieve the LLVM type computed for the type node.
             ValueAndType typeVAT = values.get(ctx.type());
-            String llvmType = (typeVAT != null) ? typeVAT.register : "i32"; // default to i32 if missing
+            String llvmType = (typeVAT != null) ? typeVAT.register : "i32"; 
 
-            // (Optional) Gather variable names for debugging or propagation.
             List<String> varNames = new ArrayList<>();
             for (CmashParser.VariableContext varCtx : ctx.variableList().variable()) {
                 varNames.add(varCtx.ID().getText());
             }
             String debugInfo = "Declaration: " + llvmType + " " + String.join(", ", varNames);
         
-            // Store the combined result for the declaration.
-            // This doesn't emit any new IR instructions, because those were already
-            // emitted in exitVariable.
             values.put(ctx, new ValueAndType(debugInfo, "declaration"));
         }
-        // If your declaration rule has alternatives (like stringDeclaration), handle them here.
         else if (ctx.stringDeclaration() != null) {
             ValueAndType stringDecl = values.get(ctx.stringDeclaration());
             values.put(ctx, stringDecl);
@@ -111,12 +106,53 @@ public class LLVMAction extends CmashBaseListener {
 
     @Override
     public void exitValues(CmashParser.ValuesContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        // Create a list to store the computed elements.
+        List<ValueAndType> arrayElements = new ArrayList<>();
+    
+        for (CmashParser.ValueContext valueCtx : ctx.value()) {
+            ValueAndType vat = values.get(valueCtx);
+            if (vat != null) {
+                arrayElements.add(vat);
+            }
+        }
+    
+        String initStr = "[" + arrayElements.stream()
+                            .map(v -> v.llvmType + " " + v.register)
+                            .collect(Collectors.joining(", ")) + "]";
+    
+        values.put(ctx, new ValueAndType(initStr, "array"));
     }
+
 
     @Override
     public void exitValue(CmashParser.ValueContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        // Case 1: The rule matched an identifier.
+        if (ctx.ID() != null) {
+            String varName = ctx.ID().getText();
+
+            VariableInfo varInfo = inFunction ? localVars.get(varName) : globalVars.get(varName);
+            if (varInfo != null) {
+                // Load the value from the variable pointer.
+                String tmpReg = LLVMGenerator.newTempReg();
+                LLVMGenerator.emit(tmpReg + " = load " + varInfo.llvmType + ", " +
+                                   varInfo.llvmType + "* " + varInfo.pointerName);
+                values.put(ctx, new ValueAndType(tmpReg, varInfo.llvmType));
+            } else {
+                // If not declared, you might signal an error.
+                System.err.println("Error: identifier '" + varName + "' not declared.");
+                values.put(ctx, new ValueAndType("0", "i32")); // fallback
+            }
+        }
+        // Case 2: The rule matched a numbers alternative.
+        else if (ctx.numbers() != null) {
+            values.put(ctx, values.get(ctx.numbers()));
+        }
+        // Case 3: The rule matched a character literal.
+        else if (ctx.CHAR_LITERAL() != null) {
+            int ascii = parseCharLiteral(ctx.CHAR_LITERAL().getText());
+            // For simplicity, treat a character literal as an i32 constant.
+            values.put(ctx, new ValueAndType(String.valueOf(ascii), "i32"));
+        }
     }
 
     @Override
