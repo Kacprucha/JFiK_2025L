@@ -546,11 +546,94 @@ public class LLVMAction extends CmashBaseListener {
 
     @Override
     public void exitExpressionStatement(CmashParser.ExpressionStatementContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        // Retrieve the value computed for the expression child.
+        ValueAndType exprValue = values.get(ctx.expression());
+    
+        // Optionally, you could emit a debug comment.
+        LLVMGenerator.emit("; Evaluated expression statement, result in " + exprValue.register);
+    
+        // Propagate the computed expression result for this statement.
+        values.put(ctx, exprValue);
     }
 
     @Override
     public void exitExpression(CmashParser.ExpressionContext ctx) {
+        // First check for a unary negation ("!" expression).
+        if (ctx.getChildCount() == 2 && ctx.getChild(0).getText().equals("!")) {
+            ValueAndType operandVAT = values.get(ctx.expression(0));
+            String resultReg = LLVMGenerator.newTempReg();
+            // Emit code to flip the i1 value: NOT x is computed as xor i1 x, 1.
+            LLVMGenerator.emit(resultReg + " = xor i1 " + operandVAT.register + ", 1");
+            values.put(ctx, new ValueAndType(resultReg, "i1"));
+            return;
+        }
+
+        // For binary operators (&&, ||, ^, etc.) or literal and variable cases.
+        if (ctx.getChildCount() >= 3) {
+            String op = ctx.getChild(1).getText();
+            if (op.equals("&&") || op.equals("||") || op.equals("^")) {
+                // Retrieve the left and right operands.
+                ValueAndType leftVAT = values.get(ctx.expression(0));
+                ValueAndType rightVAT = values.get(ctx.expression(1));
+                
+                // Track current block.
+                String currentBlockLabel = LLVMGenerator.currentBlock;
+
+                // For XOR, we assume the values are booleans (i1). No short-circuit is required.
+                if (op.equals("^")) {
+                    String resultReg = LLVMGenerator.newTempReg();
+                    // Emit the XOR instruction for booleans.
+                    LLVMGenerator.emit(resultReg + " = xor i1 " + leftVAT.register + ", " + rightVAT.register);
+                    values.put(ctx, new ValueAndType(resultReg, "i1"));
+                    System.out.println(";" + "i1 " + resultReg);
+                    return;
+                }
+                
+                if (op.equals("&&")) {
+                    // ----- Logical AND short-circuiting -----
+                    // Create labels for the right-hand side evaluation and the merge block.
+                    String rhsLabel = LLVMGenerator.newLabel();
+                    String mergeLabel = LLVMGenerator.newLabel();
+                    
+                    // Emit a conditional branch:
+                    LLVMGenerator.emit("br i1 " + leftVAT.register + ", label %" + rhsLabel + ", label %" + mergeLabel);
+                    
+                    // Mark the right-hand side block.
+                    LLVMGenerator.emitBlock(rhsLabel);
+                    LLVMGenerator.emit("br label %" + mergeLabel);
+                    
+                    // Emit the merge block.
+                    LLVMGenerator.emitBlock(mergeLabel);
+                    String resultReg = LLVMGenerator.newTempReg();
+
+                    LLVMGenerator.emit(resultReg + " = phi i1 [ 0, %" + currentBlockLabel + " ], [ " + rightVAT.register + ", %" + rhsLabel + " ]");
+                    values.put(ctx, new ValueAndType(resultReg, "i1"));
+                    System.out.println(";" + "i1 " + resultReg);
+                    return;
+                } else if (op.equals("||")) {
+                    // ----- Logical OR short-circuiting -----
+                    String rhsLabel = LLVMGenerator.newLabel();
+                    String mergeLabel = LLVMGenerator.newLabel();
+                    
+                    // For logical OR, if the left operand is true, we already have a true value.
+                    LLVMGenerator.emit("br i1 " + leftVAT.register + ", label %" + mergeLabel + ", label %" + rhsLabel);
+                    
+                    // Emit the right-hand side block.
+                    LLVMGenerator.emitBlock(rhsLabel);
+                    LLVMGenerator.emit("br label %" + mergeLabel);
+                    
+                    // Emit the merge block.
+                    LLVMGenerator.emitBlock(mergeLabel);
+                    String resultReg = LLVMGenerator.newTempReg();
+
+                    LLVMGenerator.emit(resultReg + " = phi i1 [ 1, %" + currentBlockLabel + " ], [ " + rightVAT.register + ", %" + rhsLabel + " ]");
+                    values.put(ctx, new ValueAndType(resultReg, "i1"));
+                    System.out.println(";" + "i1 " + resultReg);
+                    return;
+                }
+            }
+        }
+
         // Try to retrieve a computed value from one of the children.
         ValueAndType result = null;
         for (int i = 0; i < ctx.getChildCount(); i++) {
@@ -869,7 +952,39 @@ public class LLVMAction extends CmashBaseListener {
 
     @Override
     public void exitFunctionCall(CmashParser.FunctionCallContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        // For a simple function call, assume the first token is the function name.
+        String funcName = ctx.ID().getText();
+    
+        // Evaluate parameters if any.
+        String paramSig = "";
+        if (ctx.parameters() != null) {
+            // We assume the parameters rule produces a list of ParameterContext nodes.
+            List<String> args = new ArrayList<>();
+            // For each parameter, retrieve its computed ValueAndType.
+            for (CmashParser.ParameterContext pCtx : ctx.parameters().parameter()) {
+                ValueAndType paramVAT = values.get(pCtx);
+                // Only add if available.
+                if (paramVAT != null) {
+                    args.add(paramVAT.llvmType + " " + paramVAT.register);
+                }
+            }
+            paramSig = String.join(", ", args);
+        }
+    
+        // Decide the function's return type.
+        String retType = "i1";
+    
+        // If the function call returns something, allocate a new temporary register for it.
+        String resultReg = "";
+        if (!retType.equals("void")) {
+            resultReg = LLVMGenerator.newTempReg();
+            LLVMGenerator.emit(resultReg + " = call " + retType + " @" + funcName + "(" + paramSig + ")");
+        } else {
+            LLVMGenerator.emit("call " + retType + " @" + funcName + "(" + paramSig + ")");
+        }
+    
+        // Store the call result for this function call node.
+        values.put(ctx, new ValueAndType(resultReg, retType));
     }
 
     @Override
@@ -1069,6 +1184,8 @@ public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
                     formatStr = "@strlf"; // use double format
                 } else if (arg.llvmType.equals("i8*")) {
                     formatStr = "@strs";  // use string format
+                } else if (arg.llvmType.equals("i1")) {
+                    formatStr = "@strb";  // use boolean format
                 } else {
                     formatStr = "@strd";  // default to integer
                 }
@@ -1083,9 +1200,18 @@ public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
                     // Need to be extended to double first
                     String tempreg = LLVMGenerator.FloatToDouble(arg.register);
                     callInstr = "call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strlf, i32 0, i32 0), double " + tempreg + ")\n";
-                }
-                else
-                {
+                } else if (arg.llvmType.equals("i1")) {
+                    // Use a select instruction to pick the appropriate string based on the i1 value.
+                    String selectReg = LLVMGenerator.newTempReg();
+                    LLVMGenerator.emit(selectReg + " = select i1 " + arg.register +
+                                        ", i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0)," +
+                                        " i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)");
+
+                    // Use the string format (@strs) to print the string.
+                    callInstr = "call i32 (i8*, ...) @printf(" +
+                                "i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), " +
+                                "i8* " + selectReg + ")";
+                } else {
                     if (arg.llvmType.equals("double"))
                         gepSize = "5";
                     else if (arg.llvmType.equals("i32"))

@@ -155,7 +155,7 @@ expression
 
 // Assignment can either be an assignment or fall back to equality.
 assignment
-    : ID ASSIGNMENT_OPERATOR expression
+    : ID ('=' | '*=' | '/=' | '%=' | '+=' | '-=' | '<<=' | '>>=' | '&=' | '^=' | '|=') expression
     | fieldAccess ('=' | '*=' | '/=' | '%=' | '+=' | '-=' | '<<=' | '>>=' | '&=' | '^=' | '|=') expression
     | equality
     ;

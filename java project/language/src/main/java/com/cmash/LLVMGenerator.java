@@ -1,6 +1,7 @@
 package com.cmash;
 
 import java.util.ArrayList;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 class LLVMGenerator {
@@ -10,6 +11,8 @@ class LLVMGenerator {
     private static int tempRegCount = 0;
     private static int labelCount = 0;
     private static int stringCount = 0;
+
+    public static String currentBlock = "";
 
     public static void reset() {
         builder.setLength(0); // Clear the StringBuilder
@@ -42,8 +45,14 @@ class LLVMGenerator {
         return "label" + (labelCount++);
     }
 
+    public static void setCurrentBlock(String label) {
+        currentBlock = label;
+    }
+
+
     public static void startFunction(String funcName, String llvmReturnType, String paramSig) {
         emit("define " + llvmReturnType + " @" + funcName + "(" + paramSig + ") {");
+        emitBlock("entry");
     }
 
     public static void endFunction() {
@@ -129,11 +138,18 @@ class LLVMGenerator {
         return temp;
     }
 
+    public static void emitBlock(String label) {
+        emit(label + ":");
+        setCurrentBlock(label);
+    }
+
     public static String generate(){
         String text = "";
         text += "declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1 immarg)\n";
         text += "declare i32 @printf(i8*, ...)\n";
         text += "declare i32 @scanf(i8*, ...)\n";
+        text += "@trueStr  = constant [5 x i8] c\"true\\00\"\n";
+        text += "@falseStr = constant [6 x i8] c\"false\\00\"\n";
         text += "@strp = constant [4 x i8] c\"%d\\0A\\00\"\n";
         text += "@strs = constant [4 x i8] c\"%s\\0A\\00\" \n";
         text += "@strpi = constant [4 x i8] c\"%d\\0A\\00\"\n";
@@ -141,6 +157,7 @@ class LLVMGenerator {
         text += "@strd = constant [4 x i8] c\"%d\\0A\\00\"\n";
         text += "@strf = constant [4 x i8] c\"%f\\0A\\00\"\n";
         text += "@strlf = constant [5 x i8] c\"%lf\\0A\\00\", align 1\n";
+        text += "@strb = constant [4 x i8] c\"%d\\0A\\00\"\n";
         // Read operations
         text += "@strs_in = constant [3 x i8] c\"%d\\00\"\n";
         text += "@strd_in = constant [3 x i8] c\"%d\\00\" \n";   //For integers (i32)
