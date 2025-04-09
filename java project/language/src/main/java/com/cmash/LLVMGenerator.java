@@ -146,6 +146,8 @@ class LLVMGenerator {
         text += "@strd_in = constant [3 x i8] c\"%d\\00\" \n";   //For integers (i32)
         text += "@strf_in = constant [3 x i8] c\"%f\\00\" \n";  // For floats (float)
         text += "@strlf_in = constant [4 x i8] c\"%lf\\00\" \n";  //For doubles (double)
+        text += "@space = constant [2 x i8] c\" \\00\"\n";
+        text += "@newline = constant [2 x i8] c\"\\0A\\00\"\n";
         text += "@doubleToFloat = global double 0.0\n";
         text += getEmittedCode();
         text += "define i32 @main() nounwind{\n";

@@ -13,6 +13,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 public class LLVMAction extends CmashBaseListener {
 
     private boolean inFunction = false;
+    private static int matrixConstCounter = 0;  // Add this at the class level
     
     // Map variable names -> info. 
     // For local variables, pointerName will be something like "%x.addr"
@@ -220,40 +221,85 @@ public class LLVMAction extends CmashBaseListener {
 
      @Override
      public void exitMatrixDeclaration(CmashParser.MatrixDeclarationContext ctx) {
-         String type = mapType(ctx.numericalType().getText());
-         String varName = ctx.ID().getText();
-         List<Integer> dims = ctx.matrixSize().INT().stream()
-             .map(t -> Integer.parseInt(t.getText()))
-             .collect(Collectors.toList());
-             
-         // Build LLVM type (e.g. <2 x <3 x float>>)
-         String llvmType = dims.reversed().stream()
-             .map(d -> "[" + d + " x ")
-             .collect(Collectors.joining()) + type + "]".repeat(dims.size());
-         
-         // Handle initialization
-         String init = "zeroinitializer";
-         if (ctx.matrixRow() != null) {
-            List<String> rows = ctx.matrixRow().stream()
-            .map(row -> {
-                // Access the NUMBERS in the matrixRow rule
-                List<String> numbers = row.numbers().stream()
-                    .map(numberCtx -> numberCtx.getText()) // Get text of each number
-                    .collect(Collectors.toList());
-
-                return "[" + String.join(", ", numbers) + "]";
-            })
+        String type = mapType(ctx.numericalType().getText());
+        String varName = ctx.ID().getText();
+        List<Integer> dims = ctx.matrixSize().INT().stream()
+            .map(t -> Integer.parseInt(t.getText()))
             .collect(Collectors.toList());
-         }
+    
+        // Validate matrix dimensions
+        if (dims.size() < 2) {
+            throw new RuntimeException("Matrix '" + varName + "' must have 2 dimensions (e.g., <rows,cols>)");
+        }
+        int declaredRows = dims.get(0);
+        int declaredCols = dims.get(1);
+    
+        String llvmType = dims.stream()
+            .map(d -> "[" + d + " x ")
+            .collect(Collectors.joining()) + type + "]".repeat(dims.size());
+    
+        String init = "zeroinitializer";
+        List<String> rows = new ArrayList<>();
+    
+        if (ctx.matrixRow() != null) {
+            // Validate row count
+            
+            int actualRows = ctx.matrixRow().size();
+            if (actualRows != declaredRows) {
+                throw new RuntimeException("Matrix '" + varName + "' expects " + declaredRows + 
+                    " rows, but found " + actualRows);
+            }
+    
+            // Process each row
+            for (CmashParser.MatrixRowContext rowCtx : ctx.matrixRow()) {
+                List<CmashParser.NumbersContext> numbers = rowCtx.numbers();
+                // Validate column count per row
+                if (numbers.size() != declaredCols) {
+                    throw new RuntimeException("Matrix '" + varName + "' expects " + declaredCols + 
+                        " columns, but found " + numbers.size() + " in row: " + rowCtx.getText());
+                }
+                // Process elements
+                List<String> elements = numbers.stream()
+                    .map(numCtx -> {
+                        ValueAndType vat = values.get(numCtx);
+                        return (vat != null) ? vat.llvmType + " " + vat.register : type + " 0";
+                    })
+                    .collect(Collectors.toList());
+                String rowType = "[" + declaredCols + " x " + type + "]";
+                rows.add(rowType + " [" + String.join(", ", elements) + "]"); // 
+                
+            }
+            init = "[" + String.join(", ", rows) + "]";
+        }
      
          if (inFunction) {
-             String ptrReg = "%" + varName;
-             LLVMGenerator.emit(ptrReg + " = alloca " + llvmType);
+            String ptrReg = "%" + varName;
+            LLVMGenerator.emit(ptrReg + " = alloca " + llvmType);
+            
+                // Generate unique global name to avoid duplicates
+                String globalName = "@__const." + varName + "." + (matrixConstCounter++);
+                LLVMGenerator.emitGlobal(globalName + " = constant " + llvmType + " " + init);
+                
+                String destCast = LLVMGenerator.newTempReg();
+                String srcCast = LLVMGenerator.newTempReg();
+                LLVMGenerator.emit(destCast + " = bitcast " + llvmType + "* " + ptrReg + " to i8*");
+                LLVMGenerator.emit(srcCast + " = bitcast " + llvmType + "* " + globalName + " to i8*");
+                LLVMGenerator.emit("call void @llvm.memcpy.p0i8.p0i8.i64(i8* " + destCast + ", i8* " + srcCast + 
+                                ", i64 " + getMatrixSize(dims, type) + ", i1 false)");
+             
              localVars.put(varName, new VariableInfo(ptrReg, llvmType + "*"));
          } else {
              LLVMGenerator.declareGlobalMatrix(varName, llvmType, init);
              globalVars.put(varName, new VariableInfo("@" + varName, llvmType));
          }
+     }
+     
+     private long getMatrixSize(List<Integer> dims, String elementType) {
+         long elements = dims.stream().reduce(1, (a, b) -> a * b);
+         int elementSize = elementType.equals("i32") ? 4 : 
+                          elementType.equals("float") ? 4 : 
+                          elementType.equals("double") ? 8 : 4;
+         return elements * elementSize;
      }
 
     @Override
@@ -869,7 +915,22 @@ public class LLVMAction extends CmashBaseListener {
 
     @Override
     public void exitNumbers(CmashParser.NumbersContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (ctx.INT() != null) {
+            values.put(ctx, new ValueAndType(ctx.INT().getText(), "i32"));
+        } else if (ctx.FLOAT() != null) {
+            String floatText = ctx.FLOAT().getText();
+            // Remove trailing 'f' or 'F'
+            if (floatText.endsWith("f") || floatText.endsWith("F")) {
+                floatText = floatText.substring(0, floatText.length() - 1);
+            }
+            float value = Float.parseFloat(floatText);
+            int bits = Float.floatToIntBits(value);
+            String formatted = "0x" + String.format("%08X", bits);
+            values.put(ctx, new ValueAndType(formatted, "float"));
+        } else if (ctx.DOUBLE() != null) {
+            String doubleText = ctx.DOUBLE().getText();
+            values.put(ctx, new ValueAndType(doubleText, "double"));
+        }
     }
 
     @Override
@@ -960,6 +1021,35 @@ public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
     @Override
     public void enterIoStatement(CmashParser.IoStatementContext ctx) {
         LLVMGenerator.emit("; Entering IO statement");
+    }
+
+    private void generateMatrixPrintLoops(VariableInfo matrixVar, String matrixType, List<Integer> dims, String elementType) {
+        String ptrReg = matrixVar.pointerName;
+        List<String> indices = new ArrayList<>();
+        List<String> loopLabels = new ArrayList<>();
+    
+        // Generate GEP indices and loop labels for each dimension
+        for (int i = 0; i < dims.size(); i++) {
+            String idxReg = LLVMGenerator.newTempReg();
+            String loopStart = LLVMGenerator.newLabel();
+            String loopEnd = LLVMGenerator.newLabel();
+            loopLabels.add(loopStart);
+            loopLabels.add(loopEnd);
+    
+            // Initialize index variable
+            LLVMGenerator.emit(idxReg + " = alloca i32");
+            LLVMGenerator.emit("store i32 0, i32* " + idxReg);
+            indices.add(idxReg);
+    
+            // Loop header
+            LLVMGenerator.emit("br label %" + loopStart);
+            LLVMGenerator.emit(loopStart + ":");
+            String currentIdx = LLVMGenerator.loadValue("i32", idxReg);
+            String cmpReg = LLVMGenerator.newTempReg();
+            LLVMGenerator.emit(cmpReg + " = icmp slt i32 " + currentIdx + ", " + dims.get(i));
+            String exitLabel = (i == dims.size() - 1) ? loopLabels.get(loopLabels.size() - 1) : loopLabels.get(loopLabels.size() - 2);
+            LLVMGenerator.emit("br i1 " + cmpReg + ", label %" + loopLabels.get(loopLabels.size() - 2) + ", label %" + exitLabel);
+        }
     }
 
     @Override

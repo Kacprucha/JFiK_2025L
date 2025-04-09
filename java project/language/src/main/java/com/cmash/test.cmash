@@ -1,8 +1,10 @@
 int Maine () {
     
-    int X<4, 2>
-    char A[4][2][1]
-    string S = "Abc"
+    int X<3, 2> = <4, 1; 2, 1; 3, 1>
+
+    int Y = 2
+    read(Y)
+    print(Y)
 
     return 0
 }
