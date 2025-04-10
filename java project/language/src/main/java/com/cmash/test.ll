@@ -1,10 +1,50 @@
+;i32 0
+;i32 1
+;double 1.2
+;double 4.32
+;i1 %t2
+;i32 %t4
+;float %t5
+;double %t7
+;i32 %t9
+;i32 %t11
+;i32 %t12
+;i32 %t12
+;i32 %t13
+;i32 1
+;i1 %t22
+;i1 %t24
+;i1 %t26
+;i1 %t27
+;i1 %t28
+;i1 %t28
+;i1 %t29
+;i1 %t31
+;i1 %t32
+;i1 %t33
+;i1 %t33
+;i1 %t34
+;i1 %t36
+;i1 %t37
+;i1 %t38
+;i1 %t38
+;i1 %t39
+;i1 %t41
+;i1 %t42
+;i1 %t43
+;i1 %t45
+;i1 %t46
+;i1 %t47
+;i1 %t47
+;i1 %t48
+;i32 0
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1 immarg)
 declare i32 @printf(i8*, ...)
 declare i32 @scanf(i8*, ...)
 @trueStr  = constant [5 x i8] c"true\00"
 @falseStr = constant [6 x i8] c"false\00"
 @strp = constant [4 x i8] c"%d\0A\00"
-@strs = constant [4 x i8] c"%s\0A\00"
+@strs = constant [4 x i8] c"%s\0A\00" 
 @strpi = constant [4 x i8] c"%d\0A\00"
 @strpd = constant [4 x i8] c"%f\0A\00"
 @strd = constant [4 x i8] c"%d\0A\00"
@@ -12,15 +52,17 @@ declare i32 @scanf(i8*, ...)
 @strlf = constant [5 x i8] c"%lf\0A\00", align 1
 @strb = constant [4 x i8] c"%d\0A\00"
 @strs_in = constant [3 x i8] c"%d\00"
-@strd_in = constant [3 x i8] c"%d\00"
-@strf_in = constant [3 x i8] c"%f\00"
-@strlf_in = constant [4 x i8] c"%lf\00"
+@strd_in = constant [3 x i8] c"%d\00" 
+@strf_in = constant [3 x i8] c"%f\00" 
+@strlf_in = constant [4 x i8] c"%lf\00" 
 @space = constant [2 x i8] c" \00"
 @newline = constant [2 x i8] c"\0A\00"
 @doubleToFloat = global double 0.0
 @.str0 = constant [10 x i8] c"Pass int:\00"
 @.str1 = constant [18 x i8] c"(2 + 2 * 2) / 3 =\00"
 @__const.Macierz.0 = constant [3 x [2 x i32]] [[2 x i32] [i32 4, i32 1], [2 x i32] [i32 2, i32 1], [2 x i32] [i32 3, i32 1]]
+@__const.Tablica = constant [4 x double] [double 1.2, double 0.2, double 3.4, double 7.0]
+@__const.MultiDim = constant [2 x [2 x i32]] [[2 x i32] [i32 1, i32 2], [2 x i32] [i32 3, i32 4]]
 @.Napis_str = constant [6 x i8] c"napis\00"
 @.str2 = constant [19 x i8] c"We have two bools:\00"
 @.str3 = constant [33 x i8] c"Lets make on them and operation:\00"
@@ -60,7 +102,7 @@ call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @str
 ; Entering printArgs
 %t5 = load float, float* %MyFloat.addr
 ; Exiting printArgs with 1 arguments
-%t6= fpext float %t5 to double
+%t6= fpext float %t5 to double 
 
 call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strlf, i32 0, i32 0), double %t6)
 
@@ -102,10 +144,17 @@ call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @str
 %t15 = bitcast [3 x [2 x i32]]* @__const.Macierz.0 to i8*
 call void @llvm.memcpy.p0i8.p0i8.i64(i8* %t14, i8* %t15, i64 24, i1 false)
 %Tablica = alloca [4 x double]
+%t16 = bitcast [4 x double]* %Tablica to i8*
+%t17 = bitcast [4 x double]* @__const.Tablica to i8*
+call void @llvm.memcpy.p0i8.p0i8.i64(i8* %t16, i8* %t17, i64 32, i1 false)
+%MultiDim = alloca [2 x [2 x i32]]
+%t18 = bitcast [2 x [2 x i32]]* %MultiDim to i8*
+%t19 = bitcast [2 x [2 x i32]]* @__const.MultiDim to i8*
+call void @llvm.memcpy.p0i8.p0i8.i64(i8* %t18, i8* %t19, i64 16, i1 false)
 %Napis = alloca [6 x i8], align 1
-%t16 = bitcast [6 x i8]* %Napis to i8*
-%t17 = bitcast [6 x i8]* @.Napis_str to i8*
-call void @llvm.memcpy.p0i8.p0i8.i64(i8* %t16, i8* %t17, i64 6, i1 false)
+%t20 = bitcast [6 x i8]* %Napis to i8*
+%t21 = bitcast [6 x i8]* @.Napis_str to i8*
+call void @llvm.memcpy.p0i8.p0i8.i64(i8* %t20, i8* %t21, i64 6, i1 false)
 %MyBool1.addr = alloca i1
 store i1 1, i1* %MyBool1.addr
 %Result.addr = alloca i1
@@ -115,101 +164,102 @@ store i1 1, i1* %MyBool1.addr
 call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str2)
 ; Entering IO statement
 ; Entering printArgs
-%t18 = load i1, i1* %MyBool0.addr
+%t22 = load i1, i1* %MyBool0.addr
 ; Exiting printArgs with 1 arguments
-%t19 = select i1 %t18, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t19)
+%t23 = select i1 %t22, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t23)
 ; Entering IO statement
 ; Entering printArgs
-%t20 = load i1, i1* %MyBool1.addr
+%t24 = load i1, i1* %MyBool1.addr
 ; Exiting printArgs with 1 arguments
-%t21 = select i1 %t20, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t21)
+%t25 = select i1 %t24, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t25)
 ; Entering IO statement
 ; Entering printArgs
 ; Exiting printArgs with 1 arguments
 call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str3)
-%t22 = load i1, i1* %MyBool0.addr
-%t23 = load i1, i1* %MyBool1.addr
-br i1 %t22, label %label0, label %label1
+%t26 = load i1, i1* %MyBool0.addr
+%t27 = load i1, i1* %MyBool1.addr
+br i1 %t26, label %label0, label %label1
 label0:
 br label %label1
 label1:
-%t24 = phi i1 [ 0, %entry ], [ %t23, %label0 ]
-store i1 %t24, i1* %Result.addr
-; Evaluated expression statement, result in %t24
+%t28 = phi i1 [ 0, %entry ], [ %t27, %label0 ]
+store i1 %t28, i1* %Result.addr
+; Evaluated expression statement, result in %t28
 ; Entering IO statement
 ; Entering printArgs
-%t25 = load i1, i1* %Result.addr
+%t29 = load i1, i1* %Result.addr
 ; Exiting printArgs with 1 arguments
-%t26 = select i1 %t25, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t26)
+%t30 = select i1 %t29, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t30)
 ; Entering IO statement
 ; Entering printArgs
 ; Exiting printArgs with 1 arguments
 call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str4)
-%t27 = load i1, i1* %MyBool0.addr
-%t28 = load i1, i1* %MyBool1.addr
-br i1 %t27, label %label3, label %label2
+%t31 = load i1, i1* %MyBool0.addr
+%t32 = load i1, i1* %MyBool1.addr
+br i1 %t31, label %label3, label %label2
 label2:
 br label %label3
 label3:
-%t29 = phi i1 [ 1, %label1 ], [ %t28, %label2 ]
-store i1 %t29, i1* %Result.addr
-; Evaluated expression statement, result in %t29
+%t33 = phi i1 [ 1, %label1 ], [ %t32, %label2 ]
+store i1 %t33, i1* %Result.addr
+; Evaluated expression statement, result in %t33
 ; Entering IO statement
 ; Entering printArgs
-%t30 = load i1, i1* %Result.addr
+%t34 = load i1, i1* %Result.addr
 ; Exiting printArgs with 1 arguments
-%t31 = select i1 %t30, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t31)
+%t35 = select i1 %t34, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t35)
 ; Entering IO statement
 ; Entering printArgs
 ; Exiting printArgs with 1 arguments
 call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str5)
-%t32 = load i1, i1* %MyBool0.addr
-%t33 = load i1, i1* %MyBool1.addr
-%t34 = xor i1 %t32, %t33
-store i1 %t34, i1* %Result.addr
-; Evaluated expression statement, result in %t34
-; Entering IO statement
-; Entering printArgs
-%t35 = load i1, i1* %Result.addr
-; Exiting printArgs with 1 arguments
-%t36 = select i1 %t35, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t36)
-; Entering IO statement
-; Entering printArgs
-; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str6)
-%t37 = load i1, i1* %MyBool0.addr
-%t38 = xor i1 %t37, 1
-store i1 %t38, i1* %MyBool0.addr
+%t36 = load i1, i1* %MyBool0.addr
+%t37 = load i1, i1* %MyBool1.addr
+%t38 = xor i1 %t36, %t37
+store i1 %t38, i1* %Result.addr
 ; Evaluated expression statement, result in %t38
 ; Entering IO statement
 ; Entering printArgs
-%t39 = load i1, i1* %MyBool0.addr
+%t39 = load i1, i1* %Result.addr
 ; Exiting printArgs with 1 arguments
 %t40 = select i1 %t39, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
 call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t40)
 ; Entering IO statement
 ; Entering printArgs
 ; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str7)
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str6)
 %t41 = load i1, i1* %MyBool0.addr
-%t42 = load i1, i1* %MyBool1.addr
-%t43 = xor i1 %t41, %t42
-store i1 %t43, i1* %Result.addr
-; Evaluated expression statement, result in %t43
+%t42 = xor i1 %t41, 1
+store i1 %t42, i1* %MyBool0.addr
+; Evaluated expression statement, result in %t42
 ; Entering IO statement
 ; Entering printArgs
-%t44 = load i1, i1* %Result.addr
+%t43 = load i1, i1* %MyBool0.addr
 ; Exiting printArgs with 1 arguments
-%t45 = select i1 %t44, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t45)
+%t44 = select i1 %t43, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t44)
+; Entering IO statement
+; Entering printArgs
+; Exiting printArgs with 1 arguments
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str7)
+%t45 = load i1, i1* %MyBool0.addr
+%t46 = load i1, i1* %MyBool1.addr
+%t47 = xor i1 %t45, %t46
+store i1 %t47, i1* %Result.addr
+; Evaluated expression statement, result in %t47
+; Entering IO statement
+; Entering printArgs
+%t48 = load i1, i1* %Result.addr
+; Exiting printArgs with 1 arguments
+%t49 = select i1 %t48, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t49)
 ret i32 0
 }
 
 define i32 @main() nounwind{
 %res = call i32 @Main()
 ret i32 0 }
+

@@ -208,7 +208,7 @@ public class LLVMAction extends CmashBaseListener {
         }
     }
 
-    @Override 
+    @Override
     public void exitArrayDeclaration(CmashParser.ArrayDeclarationContext ctx) {
         String type = mapType(ctx.type().getText());
         String varName = ctx.ID().getText();
@@ -219,35 +219,94 @@ public class LLVMAction extends CmashBaseListener {
             dimensions.add(Integer.parseInt(sizeCtx.INT().getText()));
         }
         
-        // Build LLVM array type (e.g. [5 x [10 x i32]])
-        String llvmType = dimensions.reversed().stream()
+        // Build LLVM array type (e.g. [2 x [3 x i32]])
+        String llvmType = dimensions.stream()
             .map(size -> "[" + size + " x ")
             .collect(Collectors.joining()) + type + "]".repeat(dimensions.size());
             
         // Handle initialization
         String init = "zeroinitializer";
-        if (ctx.values() != null) {
-            // Get the ValuesContext (contains all value elements)
-            CmashParser.ValuesContext valuesCtx = ctx.values();
-
-            // Extract ValueAndType for EACH value in the values rule
-            List<ValueAndType> arrayElements = valuesCtx.value().stream() // Iterate over each value
-                .map(valueCtx -> values.get(valueCtx)) // Get ValueAndType for each value
-                .collect(Collectors.toList());
-
-            // Build the LLVM array initialization string
-            init = "[" + arrayElements.stream()
-                .map(v -> v.llvmType + " " + v.register) // Use fields from ValueAndType
-                .collect(Collectors.joining(", ")) + "]";
+        List<CmashParser.ValuesContext> valuesList = ctx.values();
+        if (!valuesList.isEmpty()) { // Check if there are any initializers
+            if (dimensions.isEmpty()) {
+                throw new RuntimeException("Array dimensions cannot be empty");
+            }
+            if (dimensions.size() == 1) {
+                // 1D array: single ValuesContext expected
+                if (valuesList.size() != 1) {
+                    throw new RuntimeException("1D array initializer must have exactly one group");
+                }
+                CmashParser.ValuesContext vc = valuesList.get(0);
+                List<ValueAndType> elements = vc.value().stream()
+                    .map(valueCtx -> values.get(valueCtx))
+                    .collect(Collectors.toList());
+                if (elements.size() != dimensions.get(0)) {
+                    throw new RuntimeException("1D array initializer has " + elements.size() + " elements, expected " + dimensions.get(0));
+                }
+                init = "[" + elements.stream()
+                    .map(e -> e.llvmType + " " + e.register)
+                    .collect(Collectors.joining(", ")) + "]";
+            } else {
+                // Multi-dimensional array
+                int outerDim = dimensions.get(0);
+                if (valuesList.size() != outerDim) {
+                    throw new RuntimeException("Array initializer has " + valuesList.size() + " groups, expected " + outerDim);
+                }
+                List<Integer> innerDims = dimensions.subList(1, dimensions.size());
+                int innerElements = innerDims.stream().reduce(1, (a, b) -> a * b);
+                String innerType = buildGroupType(innerDims, type);
+                List<String> subArrays = new ArrayList<>();
+                for (CmashParser.ValuesContext vc : valuesList) {
+                    List<ValueAndType> elements = vc.value().stream()
+                        .map(valueCtx -> values.get(valueCtx))
+                        .collect(Collectors.toList());
+                    if (elements.size() != innerElements) {
+                        throw new RuntimeException("Sub-array initializer has " + elements.size() + " elements, expected " + innerElements);
+                    }
+                    String elementsStr = elements.stream()
+                        .map(e -> e.llvmType + " " + e.register)
+                        .collect(Collectors.joining(", "));
+                    subArrays.add(innerType + " [" + elementsStr + "]");
+                }
+                init = "[" + String.join(", ", subArrays) + "]";
+            }
         }
 
         if (inFunction) {
             String ptrReg = "%" + varName;
             LLVMGenerator.emit(ptrReg + " = alloca " + llvmType);
             localVars.put(varName, new VariableInfo(ptrReg, llvmType + "*"));
+            if (!init.equals("zeroinitializer")) {
+                String globalName = "@__const." + varName;
+                LLVMGenerator.emitGlobal(globalName + " = constant " + llvmType + " " + init);
+                String destCast = LLVMGenerator.newTempReg();
+                String srcCast = LLVMGenerator.newTempReg();
+                LLVMGenerator.emit(destCast + " = bitcast " + llvmType + "* " + ptrReg + " to i8*");
+                LLVMGenerator.emit(srcCast + " = bitcast " + llvmType + "* " + globalName + " to i8*");
+                long size = dimensions.stream().reduce(1, (a, b) -> a * b) * getTypeSize(type);
+                LLVMGenerator.emit("call void @llvm.memcpy.p0i8.p0i8.i64(i8* " + destCast + ", i8* " + srcCast + ", i64 " + size + ", i1 false)");
+            }
         } else {
             LLVMGenerator.declareGlobalArray(varName, llvmType, init);
             globalVars.put(varName, new VariableInfo("@" + varName, llvmType));
+        }
+    }
+
+    private String buildGroupType(List<Integer> dims, String elementType) {
+        if (dims.isEmpty()) {
+            return elementType;
+        }
+        return dims.stream()
+            .map(size -> "[" + size + " x ")
+            .collect(Collectors.joining()) + elementType + "]".repeat(dims.size());
+    }
+
+    private int getTypeSize(String type) {
+        switch (type) {
+            case "i32": return 4;
+            case "float": return 4;
+            case "double": return 8;
+            default: return 4;
         }
     }
 

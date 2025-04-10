@@ -17,7 +17,7 @@ declaration
 
 // Helper for matrixes and arrays declaration
 values
-    : value (',' value)*
+    : '[' value (',' value)* ']'
     ;
 
 // Either variable name or value
@@ -47,7 +47,7 @@ stringDeclaration
     ;
 
 arrayDeclaration
-    : type ID arraySize (arraySize)* ('=' '[' values ']')? END_OF_LINE?
+    : type ID arraySize (arraySize)* ('=' values*)? END_OF_LINE?
     ;
 
 matrixDeclaration
