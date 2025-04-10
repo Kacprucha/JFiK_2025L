@@ -158,6 +158,7 @@ assignment
     : ID ('=' | '*=' | '/=' | '%=' | '+=' | '-=' | '<<=' | '>>=' | '&=' | '^=' | '|=') expression
     | fieldAccess ('=' | '*=' | '/=' | '%=' | '+=' | '-=' | '<<=' | '>>=' | '&=' | '^=' | '|=') expression
     | equality
+    | arrayAccess ('=' | '*=' | '/=' | '%=' | '+=' | '-=' | '<<=' | '>>=' | '&=' | '^=' | '|=') expression
     ;
 
 // Equality expressions (using == or !=).
@@ -207,7 +208,7 @@ numbers
     ;
 
 arrayAccess
-    : ID '[' INT ']'* END_OF_LINE?
+    : ID ('[' INT ']')* END_OF_LINE?
     ;
 
 matrixAccess

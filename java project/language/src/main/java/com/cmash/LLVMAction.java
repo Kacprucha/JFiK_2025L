@@ -828,9 +828,22 @@ public class LLVMAction extends CmashBaseListener {
                                rhs.llvmType + "* " + fieldPtr.register);
             values.put(ctx, rhs);
         }
-        // Case 3: Fallback (if the rule falls back to an equality expression).
+        // Case 3: arrays
+        else if (ctx.arrayAccess() != null) {
+            // Get the computed pointer to the array element
+            ValueAndType elementPtrVAT = values.get(ctx.arrayAccess());
+            // Get the RHS value
+            ValueAndType rhsVAT = values.get(ctx.expression());
+            
+            // Emit store instruction: <element-type> <rhs-value>, <element-type>* <pointer>
+            LLVMGenerator.emit("store " + rhsVAT.llvmType + " " + rhsVAT.register + ", " + 
+                              rhsVAT.llvmType + "* " + elementPtrVAT.register);
+            
+            // Propagate the RHS value as the result
+            values.put(ctx, rhsVAT);
+        }
+        // Case 4: Fallback to equality expression
         else {
-            // In this case, simply propagate the result from the equality alternative.
             values.put(ctx, values.get(ctx.equality()));
         }
     }
@@ -1146,24 +1159,35 @@ public class LLVMAction extends CmashBaseListener {
     @Override
     public void exitArrayAccess(CmashParser.ArrayAccessContext ctx) {
         String varName = ctx.ID().getText();
-        String indices = ctx.INT().getText();
-        
-        // Look up the variable pointer in localVars (if inside a function) or globalVars.
         VariableInfo varInfo = inFunction ? localVars.get(varName) : globalVars.get(varName);
+        
         if (varInfo == null) {
             System.err.println("Error: variable " + varName + " is not declared.");
             return;
         }
 
+        // Collect all indices (e.g., [1][2][3] -> ["1", "2", "3"])
+        List<String> indices = ctx.INT().stream()
+            .map(TerminalNode::getText)
+            .collect(Collectors.toList());
+
+        // Build GEP indices (start with 0 for the base pointer)
+        String gepIndices = "i32 0";
+        for (String index : indices) {
+            gepIndices += ", i32 " + index;
+        }
+
+        // Construct GEP instruction
         String elementPtr = LLVMGenerator.newTempReg();
-        
-        // Build GEP instruction
         String gep = "getelementptr inbounds " + varInfo.llvmType.replace("*", "") + 
-            ", " + varInfo.llvmType + " " + varInfo.pointerName + 
-            ", i32 0" + indices;
-        
+                    ", " + varInfo.llvmType + " " + varInfo.pointerName + 
+                    ", " + gepIndices;
+
         LLVMGenerator.emit(elementPtr + " = " + gep);
-        values.put(ctx, new ValueAndType(elementPtr, varInfo.llvmType.replace("*", "").replace("[", "").split(" x ")[0]));
+        
+        // Infer the element type (simplified example; adjust based on your type system)
+        String elementType = varInfo.llvmType.replaceAll("\\[.*\\]", "").trim();
+        values.put(ctx, new ValueAndType(elementPtr, elementType));
     }
 
     @Override public void enterMatrixAccess(CmashParser.MatrixAccessContext ctx) { 
@@ -1408,14 +1432,6 @@ public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
     }
 
     @Override
-    public void enterPrintArgs(CmashParser.PrintArgsContext ctx) {
-        // Optionally, initialize an empty list for this context.
-        // (We will actually build the list in exitPrintArgs.)
-        // You might also add a debug comment if desired:
-        LLVMGenerator.emit("; Entering printArgs");
-    }
-
-    @Override
     public void exitPrintArgs(CmashParser.PrintArgsContext ctx) {
         List<ValueAndType> argList = new ArrayList<>();
     
@@ -1456,5 +1472,4 @@ public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
             values.put(ctx, new ValueAndType(ptr, "i8*"));
         }
     }
-
 }
