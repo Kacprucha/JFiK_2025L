@@ -680,7 +680,7 @@ public class LLVMAction extends CmashBaseListener {
                     // Emit the XOR instruction for booleans.
                     LLVMGenerator.emit(resultReg + " = xor i1 " + leftVAT.register + ", " + rightVAT.register);
                     values.put(ctx, new ValueAndType(resultReg, "i1"));
-                    System.out.println(";" + "i1 " + resultReg);
+                    //System.out.println(";" + "i1 " + resultReg);
                     return;
                 }
                 
@@ -703,7 +703,7 @@ public class LLVMAction extends CmashBaseListener {
 
                     LLVMGenerator.emit(resultReg + " = phi i1 [ 0, %" + currentBlockLabel + " ], [ " + rightVAT.register + ", %" + rhsLabel + " ]");
                     values.put(ctx, new ValueAndType(resultReg, "i1"));
-                    System.out.println(";" + "i1 " + resultReg);
+                    //System.out.println(";" + "i1 " + resultReg);
                     return;
                 } else if (op.equals("||")) {
                     // ----- Logical OR short-circuiting -----
@@ -723,7 +723,7 @@ public class LLVMAction extends CmashBaseListener {
 
                     LLVMGenerator.emit(resultReg + " = phi i1 [ 1, %" + currentBlockLabel + " ], [ " + rightVAT.register + ", %" + rhsLabel + " ]");
                     values.put(ctx, new ValueAndType(resultReg, "i1"));
-                    System.out.println(";" + "i1 " + resultReg);
+                    //System.out.println(";" + "i1 " + resultReg);
                     return;
                 }
             }
@@ -743,7 +743,7 @@ public class LLVMAction extends CmashBaseListener {
     
         // Fallback: if no value was found, check if the entire expression text is a numeric literal.
         if (result == null) {
-            System.err.println("\t" + ctx.getText());
+            //System.err.println("\t" + ctx.getText());
             String text = ctx.getText().trim();
             // A regex that matches integer, float, and double literals:
             // - Optional sign, digits with optional decimal point, optional exponent, and optional trailing f/F.
@@ -791,7 +791,7 @@ public class LLVMAction extends CmashBaseListener {
             }
         }
         
-        System.out.println(";" + result.llvmType + " " + result.register);
+        //System.out.println(";" + result.llvmType + " " + result.register);
         values.put(ctx, result);
     }
 

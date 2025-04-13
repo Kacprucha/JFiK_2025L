@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.misc.*;
 import org.antlr.v4.runtime.tree.*;
+
 import java.util.List;
 import java.util.Iterator;
 import java.util.ArrayList;
@@ -160,6 +161,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitProgram(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitProgram(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ProgramContext program() throws RecognitionException {
@@ -246,6 +252,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitDeclaration(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitDeclaration(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final DeclarationContext declaration() throws RecognitionException {
@@ -329,6 +340,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitValues(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitValues(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ValuesContext values() throws RecognitionException {
@@ -392,6 +408,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitValue(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitValue(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ValueContext value() throws RecognitionException {
@@ -454,6 +475,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitArraySize(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitArraySize(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ArraySizeContext arraySize() throws RecognitionException {
@@ -498,6 +524,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitMatrixSize(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitMatrixSize(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -563,6 +594,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitMatrixRow(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitMatrixRow(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final MatrixRowContext matrixRow() throws RecognitionException {
@@ -619,6 +655,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitStringDeclaration(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitStringDeclaration(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -698,6 +739,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitArrayDeclaration(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitArrayDeclaration(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -803,6 +849,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitMatrixDeclaration(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitMatrixDeclaration(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final MatrixDeclarationContext matrixDeclaration() throws RecognitionException {
@@ -893,6 +944,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitVariableList(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitVariableList(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final VariableListContext variableList() throws RecognitionException {
@@ -950,6 +1006,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitVariable(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitVariable(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1010,6 +1071,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitFunctionDefinition(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitFunctionDefinition(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1098,6 +1164,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitStructDefinition(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitStructDefinition(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final StructDefinitionContext structDefinition() throws RecognitionException {
@@ -1161,6 +1232,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitCompoundStruct(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitCompoundStruct(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1238,6 +1314,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitStructMember(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitStructMember(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final StructMemberContext structMember() throws RecognitionException {
@@ -1288,6 +1369,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitType(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitType(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1378,6 +1464,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitNumericalType(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitNumericalType(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final NumericalTypeContext numericalType() throws RecognitionException {
@@ -1433,6 +1524,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitParameters(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitParameters(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1529,6 +1625,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitParameter(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitParameter(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ParameterContext parameter() throws RecognitionException {
@@ -1579,6 +1680,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitCompoundStatement(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitCompoundStatement(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1689,6 +1795,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitStatement(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitStatement(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final StatementContext statement() throws RecognitionException {
@@ -1788,6 +1899,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitExpressionStatement(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitExpressionStatement(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final ExpressionStatementContext expressionStatement() throws RecognitionException {
@@ -1865,6 +1981,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitExpression(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitExpression(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2072,6 +2193,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitAssignment(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitAssignment(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final AssignmentContext assignment() throws RecognitionException {
@@ -2179,6 +2305,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitEquality(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitEquality(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final EqualityContext equality() throws RecognitionException {
@@ -2249,6 +2380,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitRelational(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitRelational(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2321,6 +2457,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitAdditive(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitAdditive(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final AdditiveContext additive() throws RecognitionException {
@@ -2391,6 +2532,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitMultiplicative(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitMultiplicative(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2464,6 +2610,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitFieldAccess(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitFieldAccess(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2542,6 +2693,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitFunctionCall(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitFunctionCall(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2651,6 +2807,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitPrimary(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitPrimary(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final PrimaryContext primary() throws RecognitionException {
@@ -2745,6 +2906,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitNumbers(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitNumbers(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final NumbersContext numbers() throws RecognitionException {
@@ -2796,6 +2962,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitArrayAccess(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitArrayAccess(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2870,6 +3041,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitMatrixAccess(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitMatrixAccess(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -2950,6 +3126,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitSelectionStatement(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitSelectionStatement(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final SelectionStatementContext selectionStatement() throws RecognitionException {
@@ -3014,6 +3195,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitIterationStatement(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitIterationStatement(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final IterationStatementContext iterationStatement() throws RecognitionException {
@@ -3071,6 +3257,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitLoopStatement(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitLoopStatement(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -3138,6 +3329,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitIoStatement(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitIoStatement(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -3229,6 +3425,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitJumpStatement(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitJumpStatement(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final JumpStatementContext jumpStatement() throws RecognitionException {
@@ -3293,6 +3494,11 @@ public class CmashParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitPrintArgs(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitPrintArgs(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final PrintArgsContext printArgs() throws RecognitionException {
@@ -3350,6 +3556,11 @@ public class CmashParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof CmashListener ) ((CmashListener)listener).exitPrintArg(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof CmashVisitor ) return ((CmashVisitor<? extends T>)visitor).visitPrintArg(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 

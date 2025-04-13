@@ -1,52 +1,10 @@
-;i32 0
-;i32 1
-;double 1.2
-;double 4.32
-;i1 %t2
-;i32 %t4
-;float %t5
-;double %t7
-;i32 %t9
-;i32 %t11
-;i32 %t12
-;i32 %t12
-;i32 %t13
-;double 3.0
-;double 3.0
-;i32 1
-;i1 %t23
-;i1 %t25
-;i1 %t27
-;i1 %t28
-;i1 %t29
-;i1 %t29
-;i1 %t30
-;i1 %t32
-;i1 %t33
-;i1 %t34
-;i1 %t34
-;i1 %t35
-;i1 %t37
-;i1 %t38
-;i1 %t39
-;i1 %t39
-;i1 %t40
-;i1 %t42
-;i1 %t43
-;i1 %t44
-;i1 %t46
-;i1 %t47
-;i1 %t48
-;i1 %t48
-;i1 %t49
-;i32 0
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1 immarg)
 declare i32 @printf(i8*, ...)
 declare i32 @scanf(i8*, ...)
 @trueStr  = constant [5 x i8] c"true\00"
 @falseStr = constant [6 x i8] c"false\00"
 @strp = constant [4 x i8] c"%d\0A\00"
-@strs = constant [4 x i8] c"%s\0A\00" 
+@strs = constant [4 x i8] c"%s\0A\00"
 @strpi = constant [4 x i8] c"%d\0A\00"
 @strpd = constant [4 x i8] c"%f\0A\00"
 @strd = constant [4 x i8] c"%d\0A\00"
@@ -54,9 +12,9 @@ declare i32 @scanf(i8*, ...)
 @strlf = constant [5 x i8] c"%lf\0A\00", align 1
 @strb = constant [4 x i8] c"%d\0A\00"
 @strs_in = constant [3 x i8] c"%d\00"
-@strd_in = constant [3 x i8] c"%d\00" 
-@strf_in = constant [3 x i8] c"%f\00" 
-@strlf_in = constant [4 x i8] c"%lf\00" 
+@strd_in = constant [3 x i8] c"%d\00"
+@strf_in = constant [3 x i8] c"%f\00"
+@strlf_in = constant [4 x i8] c"%lf\00"
 @space = constant [2 x i8] c" \00"
 @newline = constant [2 x i8] c"\0A\00"
 @doubleToFloat = global double 0.0
@@ -101,7 +59,7 @@ call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @str
 ; Entering IO statement
 %t5 = load float, float* %MyFloat.addr
 ; Exiting printArgs with 1 arguments
-%t6= fpext float %t5 to double 
+%t6= fpext float %t5 to double
 
 call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strlf, i32 0, i32 0), double %t6)
 
@@ -240,10 +198,12 @@ store i1 %t48, i1* %Result.addr
 ; Exiting printArgs with 1 arguments
 %t50 = select i1 %t49, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
 call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t50)
+; Entering IO statement
+; Exiting printArgs with 1 arguments
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strpi, i32 0, i32 0), i32 0)
 ret i32 0
 }
 
 define i32 @main() nounwind{
 %res = call i32 @Main()
 ret i32 0 }
-

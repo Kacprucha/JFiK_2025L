@@ -53,5 +53,7 @@ int Main () {
     Result = MyBool0 ^ MyBool1
     print(Result)
 
+    print(Zmienna)
+
     return 0
 }

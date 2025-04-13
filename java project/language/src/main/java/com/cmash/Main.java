@@ -31,6 +31,16 @@ public class Main {
 
         // Check if any errors were recorded; if yes, display them and halt further processing
         if (!errorListener.getErrors().isEmpty()) {
+            System.err.println("Compilation halted due to syntax errors.");
+            System.exit(1);
+        }
+
+        // Run the semantic analysis pass.
+        SemanticAnalyzer semanticAnalyzer = new SemanticAnalyzer();
+        semanticAnalyzer.visit(tree);
+        
+        if (semanticAnalyzer.hasErrors()) {
+            System.err.println("Compilation halted due to semantic errors.");
             System.exit(1);
         }
         
