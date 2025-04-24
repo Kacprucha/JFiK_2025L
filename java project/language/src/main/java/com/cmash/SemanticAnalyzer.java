@@ -1,13 +1,20 @@
 package com.cmash;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
 import org.antlr.v4.runtime.Token;
 
 public class SemanticAnalyzer extends CmashBaseVisitor {
 
     // A global symbol table mapping variable names to whether they have been assigned.
     private final Map<String, Boolean> symbolTable = new HashMap<>();
+    // Map function name → its return type (as a string)
+    private final Map<String,String> functionReturnTypes = new HashMap<>();
+    // Map function name → ammount of parameters as types (as a string)
+    private final Map<String,List<String>> functionParamTypes = new HashMap<>(); 
     // Flag to record if any semantic error has been encountered.
     private boolean semanticErrorOccurred = false;
     
@@ -22,6 +29,33 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
 
     // Recursively evaluates the type of an expression and performs type checking.
     public String evaluateExpressionType(CmashParser.ExpressionContext ctx) {
+        // --- Function-call case ---
+        if (ctx.functionCall() != null) {
+            CmashParser.FunctionCallContext fc = ctx.functionCall();
+            String fname = fc.ID().getText();
+
+            // 1) Does this function exist?
+            if (!functionReturnTypes.containsKey(fname)) {
+                reportError(fc.start,
+                    "Function '" + fname + "' is called but not declared.");
+                return "error";
+            }
+
+            // 2) Check arity 
+            int actualSize = fc.parameters().ID().size();
+            
+            List<String> declaredParamTypes = functionParamTypes.get(fname);
+            if (declaredParamTypes.size() != actualSize) {
+                reportError(fc.start,
+                    "Function '" + fname + "' expects " + declaredParamTypes.size() +
+                    " arguments, but " + actualSize + " were provided.");
+                return "error";
+            }
+
+            // 4) Return the declared return type
+            return functionReturnTypes.get(fname);
+        }
+
         // Base cases: Literal or identifier
         if (ctx.INT() != null) {
             return "int";
@@ -33,7 +67,7 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
             return "bool";
         } else if (ctx.CHAR_LITERAL() != null) {
             return "char";  
-        } else if (ctx.ID() != null && ctx.getChildCount() == 1) {
+        } else if (ctx.ID() != null && ctx.getChildCount() == 1 ) {
             String varName = ctx.ID().getText();
             if (!symbolTable.containsKey(varName)) {
                 reportError(ctx.start, "Variable '" + varName + "' is used but not declared.");
@@ -239,6 +273,39 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
         } else if (firstToken.equals("print")) {
             visitChildren(ctx);
         }
+        return null;
+    }
+
+    @Override
+    public Void visitParameter(CmashParser.ParameterContext ctx) {
+        String varName = ctx.ID().getText();
+        if (!symbolTable.containsKey(varName)) {
+            symbolTable.put(varName, true); // Mark as declared and assigned
+        } else {
+            reportError(ctx.start, "Variable '" + varName + "' is redeclared in function parameters.");
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitFunctionDefinition(CmashParser.FunctionDefinitionContext ctx) {
+        String retType = "void";           // e.g. "void" or "int"
+        if (ctx.type() != null) {
+            retType = ctx.type().getText();
+        }
+
+        String name = ctx.ID().getText();             // e.g. "Newprinter"
+        functionReturnTypes.put(name, retType);
+
+        List<String> params = new ArrayList<>();
+        if (ctx.parameters() != null) {
+            for (CmashParser.ParameterContext p : ctx.parameters().parameter()) {
+                params.add(p.type().getText());
+            }
+        }
+        functionParamTypes.put(name, params);
+
+        visitChildren(ctx);
         return null;
     }
 }

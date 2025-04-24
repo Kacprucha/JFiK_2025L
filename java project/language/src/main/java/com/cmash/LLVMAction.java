@@ -1,6 +1,7 @@
 package com.cmash;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,12 @@ public class LLVMAction extends CmashBaseListener {
     
     // For global variables, pointerName might be "@gVarName"
     private Map<String, VariableInfo> globalVars = new HashMap<>();
+
+      // Map function name → its LLVM return type
+    private final Map<String,String> functionReturnTypes = new HashMap<>();
+
+    // Map to store the parameter values for function calls
+    private final Map<CmashParser.ParametersContext, List<ValueAndType>> paramValues = new HashMap<>();
     
     // ------------------------------
     // 2) Storing Partial Expression Results
@@ -484,9 +491,16 @@ public class LLVMAction extends CmashBaseListener {
         localVars.clear();
 
         // Retrieve the return type and map it to the corresponding LLVM type.
-        String returnType = mapType(ctx.type().getText());
+        String type = "void";
+        if (ctx.type() != null) {
+            type = ctx.type().getText();
+        }
+        String returnType = mapType(type);
         // Retrieve the function name.
         String funcName = ctx.ID().getText();
+
+        // record it for calls
+        functionReturnTypes.put(funcName, returnType);
 
         // Build the parameter signature.
         String paramSignature = "";
@@ -525,6 +539,11 @@ public class LLVMAction extends CmashBaseListener {
 
     @Override
     public void exitFunctionDefinition(CmashParser.FunctionDefinitionContext ctx) {
+        // if the function is declared void…
+        if (functionReturnTypes.get(ctx.ID().getText()).equals("void")) {
+            LLVMGenerator.emit("ret void");
+        }
+        
         // End the function definition (emit the closing brace and a blank line).
         LLVMGenerator.endFunction();
     
@@ -587,12 +606,61 @@ public class LLVMAction extends CmashBaseListener {
 
     @Override
     public void exitParameters(CmashParser.ParametersContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        List<ValueAndType> args = new ArrayList<>();
+
+        // Case A: grammar production “parameters : parameter (',' parameter)*”
+        if (!ctx.parameter().isEmpty()) {
+            for (CmashParser.ParameterContext pCtx : ctx.parameter()) {
+                ValueAndType vat = values.get(pCtx);
+                if (vat != null) args.add(vat);
+            }
+        }
+        // Case B: your fallback “| ID (',' ID)*” 
+        else {
+            for (TerminalNode idNode : ctx.ID()) {
+                String name = idNode.getText();
+                VariableInfo info = inFunction
+                    ? localVars.get(name)
+                    : globalVars.get(name);
+                if (info == null) throw new RuntimeException(
+                    "Undeclared var in call: " + name);
+
+                // load it
+                String tmp = LLVMGenerator.newTempReg();
+                LLVMGenerator.emit(tmp
+                    + " = load " 
+                    + info.llvmType + ", " 
+                    + info.llvmType + "* " 
+                    + info.pointerName);
+                args.add(new ValueAndType(tmp, info.llvmType));
+            }
+        }
+
+        paramValues.put(ctx, args);
     }
 
     @Override
     public void exitParameter(CmashParser.ParameterContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (ctx.ID() != null) {
+            String name = ctx.ID().getText();
+            VariableInfo info = inFunction
+                ? localVars.get(name)
+                : globalVars.get(name);
+
+            if (info != null) {
+                String tmp = LLVMGenerator.newTempReg();
+                LLVMGenerator.emit(tmp
+                    + " = load "
+                    + info.llvmType + ", "
+                    + info.llvmType + "* "
+                    + info.pointerName);
+                values.put(ctx, new ValueAndType(tmp, info.llvmType));
+                return;
+            }
+        }
+
+        // Fallback: zero of i32
+        values.put(ctx, new ValueAndType("0", "i32"));
     }
 
     @Override
@@ -1063,36 +1131,33 @@ public class LLVMAction extends CmashBaseListener {
         // For a simple function call, assume the first token is the function name.
         String funcName = ctx.ID().getText();
     
-        // Evaluate parameters if any.
-        String paramSig = "";
-        if (ctx.parameters() != null) {
-            // We assume the parameters rule produces a list of ParameterContext nodes.
-            List<String> args = new ArrayList<>();
-            // For each parameter, retrieve its computed ValueAndType.
-            for (CmashParser.ParameterContext pCtx : ctx.parameters().parameter()) {
-                ValueAndType paramVAT = values.get(pCtx);
-                // Only add if available.
-                if (paramVAT != null) {
-                    args.add(paramVAT.llvmType + " " + paramVAT.register);
-                }
-            }
-            paramSig = String.join(", ", args);
-        }
+        // look up the real return type (default to i32 if unknown)
+        String retType = functionReturnTypes.getOrDefault(funcName, "i32");
+
+        // pull the list you built in exitParameters:
+        List<ValueAndType> args = ctx.parameters() == null
+            ? Collections.emptyList()
+            : paramValues.getOrDefault(ctx.parameters(),
+                                       Collections.emptyList());
     
-        // Decide the function's return type.
-        String retType = "i1";
-    
-        // If the function call returns something, allocate a new temporary register for it.
-        String resultReg = "";
+        // build “i32 5, i32 9, …”
+        String paramSig = args.stream()
+            .map(vat -> vat.llvmType + " " + vat.register)
+            .collect(Collectors.joining(", "));
+
         if (!retType.equals("void")) {
-            resultReg = LLVMGenerator.newTempReg();
-            LLVMGenerator.emit(resultReg + " = call " + retType + " @" + funcName + "(" + paramSig + ")");
+            String resultReg = LLVMGenerator.newTempReg();
+            LLVMGenerator.emit(resultReg
+                + " = call " + retType
+                + " @" + funcName
+                + "(" + paramSig + ")");
+            values.put(ctx, new ValueAndType(resultReg, retType));
         } else {
-            LLVMGenerator.emit("call " + retType + " @" + funcName + "(" + paramSig + ")");
+            LLVMGenerator.emit("call " + retType
+                + " @" + funcName
+                + "(" + paramSig + ")");
+            values.put(ctx, new ValueAndType("", "void"));
         }
-    
-        // Store the call result for this function call node.
-        values.put(ctx, new ValueAndType(resultReg, retType));
     }
 
     @Override

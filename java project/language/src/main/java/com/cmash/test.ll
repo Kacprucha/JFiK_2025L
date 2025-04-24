@@ -18,189 +18,30 @@ declare i32 @scanf(i8*, ...)
 @space = constant [2 x i8] c" \00"
 @newline = constant [2 x i8] c"\0A\00"
 @doubleToFloat = global double 0.0
-@.str0 = constant [10 x i8] c"Pass int:\00"
-@.str1 = constant [18 x i8] c"(2 + 2 * 2) / 3 =\00"
-@__const.Macierz.0 = constant [3 x [2 x i32]] [[2 x i32] [i32 4, i32 1], [2 x i32] [i32 2, i32 1], [2 x i32] [i32 3, i32 1]]
-@__const.Tablica = constant [4 x double] [double 1.2, double 0.2, double 3.4, double 7.0]
-@__const.MultiDim = constant [2 x [2 x i32]] [[2 x i32] [i32 1, i32 2], [2 x i32] [i32 3, i32 4]]
-@.Napis_str = constant [6 x i8] c"napis\00"
-@.str2 = constant [19 x i8] c"We have two bools:\00"
-@.str3 = constant [33 x i8] c"Lets make on them and operation:\00"
-@.str4 = constant [32 x i8] c"Lets make on them or operation:\00"
-@.str5 = constant [33 x i8] c"Lets make on them xor operation:\00"
-@.str6 = constant [26 x i8] c"Lets make neg first bool:\00"
-@.str7 = constant [48 x i8] c"And once again lets make on them xor operation:\00"
+@.str0 = constant [9 x i8] c"Printer:\00"
 
-define i32 @Main() {
+define void @Newprinter(double %Text) {
 entry:
-%MyBool0.addr = alloca i1
-store i1 0, i1* %MyBool0.addr
-%MyInt.addr = alloca i32
-store i32 1, i32* %MyInt.addr
-%MyFloat.addr = alloca float, align 4
-store double 1.2 , double* @doubleToFloat
-
-%t0= load double, double* @doubleToFloat
-
-%t1= fptrunc double %t0 to float
-store float %t1, float* %MyFloat.addr
-
-%MyDouble.addr = alloca double, align 8
-store double 4.32, double* %MyDouble.addr
-; Entering IO statement
-%t2 = load i1, i1* %MyBool0.addr
-; Exiting printArgs with 1 arguments
-%t3 = select i1 %t2, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t3)
-; Entering IO statement
-%t4 = load i32, i32* %MyInt.addr
-; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strpi, i32 0, i32 0), i32 %t4)
-; Entering IO statement
-%t5 = load float, float* %MyFloat.addr
-; Exiting printArgs with 1 arguments
-%t6= fpext float %t5 to double
-
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strlf, i32 0, i32 0), double %t6)
-
-; Entering IO statement
-%t7 = load double, double* %MyDouble.addr
-; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strlf, i32 0, i32 0), double %t7)
+%Text.addr = alloca double
+store double %Text, double* %Text.addr
+%t0 = load double, double* %Text.addr
 ; Entering IO statement
 ; Exiting printArgs with 1 arguments
 call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str0)
 ; Entering IO statement
-; Read token MyInt
+%t1 = load double, double* %Text.addr
+; Exiting printArgs with 1 arguments
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strlf, i32 0, i32 0), double %t1)
+ret void
+}
 
-%t8 = load i32, i32* %MyInt.addr
-call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @strd_in, i32 0, i32 0), i32* %MyInt.addr)
-; Entering IO statement
-%t9 = load i32, i32* %MyInt.addr
-; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strpi, i32 0, i32 0), i32 %t9)
-; Entering IO statement
-; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str1)
-%t10 = mul i32 2, 2
-%t11 = add i32 2, %t10
-%t12 = sdiv i32 %t11, 3
-store i32 %t12, i32* %MyInt.addr
-; Evaluated expression statement, result in %t12
-; Entering IO statement
-%t13 = load i32, i32* %MyInt.addr
-; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strpi, i32 0, i32 0), i32 %t13)
-%Macierz = alloca [3 x [2 x i32]]
-%t14 = bitcast [3 x [2 x i32]]* %Macierz to i8*
-%t15 = bitcast [3 x [2 x i32]]* @__const.Macierz.0 to i8*
-call void @llvm.memcpy.p0i8.p0i8.i64(i8* %t14, i8* %t15, i64 24, i1 false)
-%Tablica = alloca [4 x double]
-%t16 = bitcast [4 x double]* %Tablica to i8*
-%t17 = bitcast [4 x double]* @__const.Tablica to i8*
-call void @llvm.memcpy.p0i8.p0i8.i64(i8* %t16, i8* %t17, i64 32, i1 false)
-%MultiDim = alloca [2 x [2 x i32]]
-%t18 = bitcast [2 x [2 x i32]]* %MultiDim to i8*
-%t19 = bitcast [2 x [2 x i32]]* @__const.MultiDim to i8*
-call void @llvm.memcpy.p0i8.p0i8.i64(i8* %t18, i8* %t19, i64 16, i1 false)
-%t20 = getelementptr inbounds [4 x double], [4 x double]* %Tablica, i32 0, i32 2
-store double 3.0, double* %t20
-; Evaluated expression statement, result in 3.0
-%Napis = alloca [6 x i8], align 1
-%t21 = bitcast [6 x i8]* %Napis to i8*
-%t22 = bitcast [6 x i8]* @.Napis_str to i8*
-call void @llvm.memcpy.p0i8.p0i8.i64(i8* %t21, i8* %t22, i64 6, i1 false)
-%MyBool1.addr = alloca i1
-store i1 1, i1* %MyBool1.addr
-%Result.addr = alloca i1
-; Entering IO statement
-; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str2)
-; Entering IO statement
-%t23 = load i1, i1* %MyBool0.addr
-; Exiting printArgs with 1 arguments
-%t24 = select i1 %t23, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t24)
-; Entering IO statement
-%t25 = load i1, i1* %MyBool1.addr
-; Exiting printArgs with 1 arguments
-%t26 = select i1 %t25, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t26)
-; Entering IO statement
-; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str3)
-%t27 = load i1, i1* %MyBool0.addr
-%t28 = load i1, i1* %MyBool1.addr
-br i1 %t27, label %label0, label %label1
-label0:
-br label %label1
-label1:
-%t29 = phi i1 [ 0, %entry ], [ %t28, %label0 ]
-store i1 %t29, i1* %Result.addr
-; Evaluated expression statement, result in %t29
-; Entering IO statement
-%t30 = load i1, i1* %Result.addr
-; Exiting printArgs with 1 arguments
-%t31 = select i1 %t30, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t31)
-; Entering IO statement
-; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str4)
-%t32 = load i1, i1* %MyBool0.addr
-%t33 = load i1, i1* %MyBool1.addr
-br i1 %t32, label %label3, label %label2
-label2:
-br label %label3
-label3:
-%t34 = phi i1 [ 1, %label1 ], [ %t33, %label2 ]
-store i1 %t34, i1* %Result.addr
-; Evaluated expression statement, result in %t34
-; Entering IO statement
-%t35 = load i1, i1* %Result.addr
-; Exiting printArgs with 1 arguments
-%t36 = select i1 %t35, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t36)
-; Entering IO statement
-; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str5)
-%t37 = load i1, i1* %MyBool0.addr
-%t38 = load i1, i1* %MyBool1.addr
-%t39 = xor i1 %t37, %t38
-store i1 %t39, i1* %Result.addr
-; Evaluated expression statement, result in %t39
-; Entering IO statement
-%t40 = load i1, i1* %Result.addr
-; Exiting printArgs with 1 arguments
-%t41 = select i1 %t40, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t41)
-; Entering IO statement
-; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str6)
-%t42 = load i1, i1* %MyBool0.addr
-%t43 = xor i1 %t42, 1
-store i1 %t43, i1* %MyBool0.addr
-; Evaluated expression statement, result in %t43
-; Entering IO statement
-%t44 = load i1, i1* %MyBool0.addr
-; Exiting printArgs with 1 arguments
-%t45 = select i1 %t44, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t45)
-; Entering IO statement
-; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str7)
-%t46 = load i1, i1* %MyBool0.addr
-%t47 = load i1, i1* %MyBool1.addr
-%t48 = xor i1 %t46, %t47
-store i1 %t48, i1* %Result.addr
-; Evaluated expression statement, result in %t48
-; Entering IO statement
-%t49 = load i1, i1* %Result.addr
-; Exiting printArgs with 1 arguments
-%t50 = select i1 %t49, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @trueStr, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @falseStr, i32 0, i32 0)
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* %t50)
-; Entering IO statement
-; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strpi, i32 0, i32 0), i32 0)
+define i32 @Main() {
+entry:
+%Test.addr = alloca double, align 8
+store double 6.9, double* %Test.addr
+%t2 = load double, double* %Test.addr
+call void @Newprinter(double %t2)
+; Evaluated expression statement, result in
 ret i32 0
 }
 

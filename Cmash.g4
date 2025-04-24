@@ -137,20 +137,20 @@ expression
     : expression '&&' expression  // Logical AND 
     | expression '||' expression  // Logical OR 
     | expression '^' expression   // Logical XOR
-    | '!' expression              // Logical NOT
+    | '!' expression 
+    | functionCall
+    | fieldAccess
+    | arrayAccess
+    | matrixAccess             // Logical NOT
     | CHAR_LITERAL
     | FLOAT
     | DOUBLE
     | INT
-    | ID
     | BOOL_LITERAL
     | numbers '++'
     | numbers '--'
     | assignment
-    | functionCall
-    | fieldAccess
-    | arrayAccess
-    | matrixAccess
+    | ID
     ;
 
 // Assignment can either be an assignment or fall back to equality.
@@ -182,12 +182,12 @@ multiplicative
     ;
 
 fieldAccess
-    : primary '.' ID ('.' ID)* END_OF_LINE?
+    : ID '.' ID ('.' ID)* END_OF_LINE?
     ;
 
 functionCall
-    : ID '(' parameters? ')' END_OF_LINE?
-    | fieldAccess '(' parameters? ')' END_OF_LINE?
+    : ID '(' parameters? ')' 
+    | fieldAccess '(' parameters? ')' 
     ;
 
 // Primary expressions: an identifier, an integer literal, or a parenthesized expression.
@@ -199,6 +199,7 @@ primary
     | CHAR_LITERAL
     | BOOL_LITERAL
     | '(' expression ')'
+    | functionCall
     ;
 
 numbers
@@ -208,11 +209,11 @@ numbers
     ;
 
 arrayAccess
-    : ID ('[' INT ']')* END_OF_LINE?
+    : ID ('[' INT ']')+ END_OF_LINE?
     ;
 
 matrixAccess
-    : ID ('<' INT '>')* END_OF_LINE?
+    : ID ('<' INT '>')+ END_OF_LINE?
     ;
 
 // An if-statement with optional else.
