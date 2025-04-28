@@ -1,12 +1,17 @@
 void Newprinter (double Text) {
     print("Printer:")
+    int X = 4
+    print(X)
     print(Text)
 }
 
 int Main () {
 
     double Test = 6.9
+    int X = 3
     Newprinter (Test)
+
+    print(X)
     
     return 0
 }

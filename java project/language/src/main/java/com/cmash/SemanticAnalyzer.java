@@ -4,17 +4,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 import org.antlr.v4.runtime.Token;
 
 public class SemanticAnalyzer extends CmashBaseVisitor {
 
-    // A global symbol table mapping variable names to whether they have been assigned.
-    private final Map<String, Boolean> symbolTable = new HashMap<>();
+    // Stack handling variable names
+    private final Stack<Map<String, Boolean>> scopeStack = new Stack<>();
     // Map function name → its return type (as a string)
     private final Map<String,String> functionReturnTypes = new HashMap<>();
     // Map function name → ammount of parameters as types (as a string)
     private final Map<String,List<String>> functionParamTypes = new HashMap<>(); 
+    // Track parameters for the current function being analyzed
+    private List<String> currentFunctionParams = new ArrayList<>();
     // Flag to record if any semantic error has been encountered.
     private boolean semanticErrorOccurred = false;
     
@@ -27,35 +30,75 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
         return "int".equals(type) || "float".equals(type) || "double".equals(type);
     }
 
+    // Initialize global scope
+    public SemanticAnalyzer() {
+        enterScope(); // Global scope
+    }
+
+    private void enterScope() {
+        scopeStack.push(new HashMap<>());
+    }
+    
+    private void exitScope() {
+        if (!scopeStack.isEmpty()) {
+            scopeStack.pop();
+        }
+    }
+    
+    private Map<String, Boolean> getCurrentScope() {
+        return scopeStack.peek();
+    }
+    
+    // Check if a variable is declared in any accessible scope
+    private boolean isDeclared(String varName) {
+        for (int i = scopeStack.size() - 1; i >= 0; i--) {
+            if (scopeStack.get(i).containsKey(varName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // Check if a variable is declared in the current scope (for redeclaration checks)
+    private boolean isDeclaredInCurrentScope(String varName) {
+        return getCurrentScope().containsKey(varName);
+    }
+
     // Recursively evaluates the type of an expression and performs type checking.
     public String evaluateExpressionType(CmashParser.ExpressionContext ctx) {
         // --- Function-call case ---
         if (ctx.functionCall() != null) {
             CmashParser.FunctionCallContext fc = ctx.functionCall();
             String fname = fc.ID().getText();
-
-            // 1) Does this function exist?
+    
+            // 1) Check if function exists
             if (!functionReturnTypes.containsKey(fname)) {
-                reportError(fc.start,
-                    "Function '" + fname + "' is called but not declared.");
+                reportError(fc.start, "Function '" + fname + "' is not declared.");
                 return "error";
             }
-
-            // 2) Check arity 
-            int actualSize = fc.parameters().ID().size();
-            
+    
+            // 2) Get declared parameter types
             List<String> declaredParamTypes = functionParamTypes.get(fname);
-            if (declaredParamTypes.size() != actualSize) {
-                reportError(fc.start,
-                    "Function '" + fname + "' expects " + declaredParamTypes.size() +
-                    " arguments, but " + actualSize + " were provided.");
+            int actualParamCount = fc.parameters().ID().size(); // Get parameter count from IDs
+    
+            // 3) Check arity
+            if (declaredParamTypes.size() != actualParamCount) {
+                reportError(fc.start, "Function '" + fname + "' expects " + declaredParamTypes.size() + 
+                           " arguments, but " + actualParamCount + " were provided.");
                 return "error";
             }
-
-            // 4) Return the declared return type
+    
+            // 4) Check parameter types (assuming parameters are variable names)
+            for (int i = 0; i < declaredParamTypes.size(); i++) {
+                String paramName = fc.parameters().ID(i).getText();
+                if (!isDeclared(paramName)) {
+                    reportError(fc.start, "Parameter '" + paramName + "' is not declared.");
+                }
+                // Optional: Add type-checking logic if needed
+            }
+    
             return functionReturnTypes.get(fname);
         }
-
         // Base cases: Literal or identifier
         if (ctx.INT() != null) {
             return "int";
@@ -69,10 +112,10 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
             return "char";  
         } else if (ctx.ID() != null && ctx.getChildCount() == 1 ) {
             String varName = ctx.ID().getText();
-            if (!symbolTable.containsKey(varName)) {
+            if (!isDeclared(varName)) {
                 reportError(ctx.start, "Variable '" + varName + "' is used but not declared.");
                 return "error";
-            } else if (!symbolTable.get(varName)) {
+            } else if (!isDeclared(varName)) {
                 reportError(ctx.start, "Variable '" + varName + "' is used but not assigned.");
                 return "error";
             }
@@ -152,25 +195,27 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
 
     
     // --- Variable Declarations ---
-    
+    @Override
+    public Void visitCompoundStatement(CmashParser.CompoundStatementContext ctx) {
+        enterScope();
+        visitChildren(ctx);
+        exitScope();
+        return null;
+    }
+
     // For a declaration (the 'variable' rule)
     @Override
     public Void visitVariable(CmashParser.VariableContext ctx) {
         String varName = ctx.ID().getText();
-        // If an initialization expression exists, mark as assigned
         boolean isAssigned = (ctx.expression() != null);
-        
-        if (!symbolTable.containsKey(varName)) {
-            symbolTable.put(varName, isAssigned);
-        } else {
-            // Optionally, report a redeclaration error here
+    
+        if (isDeclaredInCurrentScope(varName)) {
             reportError(ctx.start, "Variable '" + varName + "' is redeclared.");
+        } else {
+            getCurrentScope().put(varName, isAssigned);
         }
-        
-        // Visit the initializer (if present) to check nested usages
-        if (ctx.expression() != null) {
-            visit(ctx.expression());
-        }
+    
+        if (ctx.expression() != null) visit(ctx.expression());
         return null;
     }
     
@@ -180,8 +225,9 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
         String varName = ctx.ID().getText();
         boolean isAssigned = (ctx.PLAIN_TEXT() != null);
         
-        if (!symbolTable.containsKey(varName)) {
-            symbolTable.put(varName, isAssigned);
+        if (!isDeclared(varName)) {
+            Map<String, Boolean> scope = getCurrentScope();
+            scope.put(varName, isAssigned);
         } else {
             reportError(ctx.start, "Variable '" + varName + "' is redeclared.");
         }
@@ -195,8 +241,9 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
         // Check if there is at least one initializer value provided.
         boolean isAssigned = (ctx.values().size() > 0);
         
-        if (!symbolTable.containsKey(varName)) {
-            symbolTable.put(varName, isAssigned);
+        if (!isDeclared(varName)) {
+            Map<String, Boolean> scope = getCurrentScope();
+            scope.put(varName, isAssigned);
         } else {
             reportError(ctx.start, "Variable '" + varName + "' is redeclared.");
         }
@@ -210,8 +257,9 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
         // Check if an initializer is provided (by checking for '=' token)
         boolean isAssigned = ctx.getChildCount() > 3 && ctx.getChild(3).getText().equals("=");
         
-        if (!symbolTable.containsKey(varName)) {
-            symbolTable.put(varName, isAssigned);
+        if (!isDeclared(varName)) {
+            Map<String, Boolean> scope = getCurrentScope();
+            scope.put(varName, isAssigned);
         } else {
             reportError(ctx.start, "Variable '" + varName + "' is redeclared.");
         }
@@ -226,11 +274,12 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
     public Void visitAssignment(CmashParser.AssignmentContext ctx) {
         if (ctx.ID() != null) {
             String varName = ctx.ID().getText();
-            if (!symbolTable.containsKey(varName)) {
+            if (!isDeclared(varName)) {
                 reportError(ctx.start, "Variable '" + varName + "' is assigned but not declared.");
             } else {
                 // Mark the variable as assigned
-                symbolTable.put(varName, true);
+                boolean isAssigned = (ctx.expression() != null);
+                getCurrentScope().put(varName, isAssigned);
             }
         }
         // Continue visiting child nodes, including the right-hand side expression.
@@ -245,10 +294,18 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
     public Void visitPrimary(CmashParser.PrimaryContext ctx) {
         if (ctx.ID() != null) {
             String varName = ctx.ID().getText();
-            if (!symbolTable.containsKey(varName)) {
+            if (!isDeclared(varName)) {
                 reportError(ctx.start, "Variable '" + varName + "' is used but not declared.");
-            } else if (!symbolTable.get(varName)) {
-                reportError(ctx.start, "Variable '" + varName + "' is used but not assigned.");
+            } else {
+                // Check if assigned (simplified logic; enhance based on your needs)
+                for (int i = scopeStack.size() - 1; i >= 0; i--) {
+                    if (scopeStack.get(i).containsKey(varName)) {
+                        if (!scopeStack.get(i).get(varName)) {
+                            reportError(ctx.start, "Variable '" + varName + "' is used but not assigned.");
+                        }
+                        break;
+                    }
+                }
             }
         }
         visitChildren(ctx);
@@ -264,11 +321,11 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
         if (firstToken.equals("read")) {
             // read statements are assumed to have the structure: read '(' ID ')'
             String varName = ctx.getChild(2).getText();
-            if (!symbolTable.containsKey(varName)) {
+            if (!isDeclared(varName)) {
                 reportError(ctx.start, "Variable '" + varName + "' used in read statement is not declared.");
             } else {
                 // Mark the variable as assigned, since we're reading a new value.
-                symbolTable.put(varName, true);
+                getCurrentScope().put(varName, true);
             }
         } else if (firstToken.equals("print")) {
             visitChildren(ctx);
@@ -279,8 +336,9 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
     @Override
     public Void visitParameter(CmashParser.ParameterContext ctx) {
         String varName = ctx.ID().getText();
-        if (!symbolTable.containsKey(varName)) {
-            symbolTable.put(varName, true); // Mark as declared and assigned
+        if (!isDeclared(varName)) {
+            Map<String, Boolean> scope = getCurrentScope();
+            scope.put(varName, true); // Mark as declared and assigned
         } else {
             reportError(ctx.start, "Variable '" + varName + "' is redeclared in function parameters.");
         }
@@ -289,23 +347,28 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
 
     @Override
     public Void visitFunctionDefinition(CmashParser.FunctionDefinitionContext ctx) {
-        String retType = "void";           // e.g. "void" or "int"
-        if (ctx.type() != null) {
-            retType = ctx.type().getText();
-        }
-
-        String name = ctx.ID().getText();             // e.g. "Newprinter"
-        functionReturnTypes.put(name, retType);
-
-        List<String> params = new ArrayList<>();
+        // Record function return type
+        String retType = ctx.type() != null ? ctx.type().getText() : "void";
+        String funcName = ctx.ID().getText();
+        functionReturnTypes.put(funcName, retType);
+    
+        // Record parameter types
+        List<String> paramTypes = new ArrayList<>();
+        currentFunctionParams = new ArrayList<>();
         if (ctx.parameters() != null) {
             for (CmashParser.ParameterContext p : ctx.parameters().parameter()) {
-                params.add(p.type().getText());
+                paramTypes.add(p.type().getText());
+                currentFunctionParams.add(p.ID().getText());
             }
         }
-        functionParamTypes.put(name, params);
-
+        functionParamTypes.put(funcName, paramTypes);
+    
+        // Enter function scope
+        enterScope();
+        // Parameters are added by visitParameter; no need to add them again here
         visitChildren(ctx);
+        exitScope(); // Exit function scope
+    
         return null;
     }
 }

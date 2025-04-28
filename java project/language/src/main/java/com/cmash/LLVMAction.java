@@ -17,9 +17,9 @@ public class LLVMAction extends CmashBaseListener {
     private boolean inFunction = false;
     private static int matrixConstCounter = 0;  // Add this at the class level
     
-    // Map variable names -> info. 
-    // For local variables, pointerName will be something like "%x.addr"
-    private Stack<Map<String, VariableInfo>> localVarStack = new Stack<>();
+    // Local variables kept in different scopes
+    private enum ScopeType { GLOBAL, FUNCTION, LOOP, CLASS, BLOCK }
+    private Stack<Scope> scopes = new Stack<>();
     
     // For global variables, pointerName might be "@gVarName"
     private Map<String, VariableInfo> globalVars = new HashMap<>();
@@ -76,19 +76,28 @@ public class LLVMAction extends CmashBaseListener {
         return 0;
     }
 
-    private VariableInfo getVariableInfo(String varName) {
-        if (inFunction) {
-            // Search from top (innermost) to bottom (function scope)
-            for (int i = localVarStack.size() - 1; i >= 0; i--) {
-                Map<String, VariableInfo> scope = localVarStack.get(i);
-                if (scope.containsKey(varName)) {
-                    return scope.get(varName);
-                }
-            }
-            return null;
-        } else {
-            return globalVars.get(varName);
+    private static class Scope {
+        ScopeType type;
+        Map<String, VariableInfo> variables;
+
+        Scope(ScopeType type) {
+            this.type = type;
+            this.variables = new HashMap<>();
         }
+    }
+
+    private VariableInfo getVariableInfo(String varName) {
+        for (int i = scopes.size() - 1; i >= 0; i--) {
+            Scope scope = scopes.get(i);
+            if (scope.variables.containsKey(varName)) {
+                return scope.variables.get(varName);
+            }
+            // Stop searching if we hit a FUNCTION/CLASS boundary (no cross-scope access)
+            if (scope.type == ScopeType.FUNCTION || scope.type == ScopeType.CLASS) {
+                break;
+            }
+        }
+        return globalVars.get(varName); // Fallback to globals
     }
 
     @Override
@@ -102,7 +111,8 @@ public class LLVMAction extends CmashBaseListener {
     
         // Clear global and local variable symbol tables.
         globalVars.clear();
-        localVarStack.clear();
+        scopes.clear();
+        scopes.push(new Scope(ScopeType.GLOBAL));
     }
 
     @Override
@@ -223,7 +233,8 @@ public class LLVMAction extends CmashBaseListener {
             LLVMGenerator.emit("call void @llvm.memcpy.p0i8.p0i8.i64(i8* " + destCast + ", i8* " + srcCast + 
                               ", i64 " + arraySize + ", i1 false)");
             
-            localVarStack.peek().put(varName, new VariableInfo(ptrReg, "[" + arraySize + " x i8]*"));
+            Scope currentScope = scopes.peek();
+            currentScope.variables.put(varName, new VariableInfo(ptrReg, "[" + arraySize + " x i8]*"));
         } else {
             // Global variable
             LLVMGenerator.emitGlobal("@" + varName + " = constant [" + arraySize + " x i8] c\"" + escapedStr + "\\00\"");
@@ -298,7 +309,8 @@ public class LLVMAction extends CmashBaseListener {
         if (inFunction) {
             String ptrReg = "%" + varName;
             LLVMGenerator.emit(ptrReg + " = alloca " + llvmType);
-            localVarStack.peek().put(varName, new VariableInfo(ptrReg, llvmType + "*"));
+            Scope currentScope = scopes.peek();
+            currentScope.variables.put(varName, new VariableInfo(ptrReg, llvmType + "*"));
             if (!init.equals("zeroinitializer")) {
                 String globalName = "@__const." + varName;
                 LLVMGenerator.emitGlobal(globalName + " = constant " + llvmType + " " + init);
@@ -405,7 +417,8 @@ public class LLVMAction extends CmashBaseListener {
                 LLVMGenerator.emit("call void @llvm.memcpy.p0i8.p0i8.i64(i8* " + destCast + ", i8* " + srcCast + 
                                 ", i64 " + getMatrixSize(dims, type) + ", i1 false)");
              
-             localVarStack.peek().put(varName, new VariableInfo(ptrReg, llvmType + "*"));
+                Scope currentScope = scopes.peek();
+                currentScope.variables.put(varName, new VariableInfo(ptrReg, llvmType + "*"));
          } else {
              LLVMGenerator.declareGlobalMatrix(varName, llvmType, init);
              globalVars.put(varName, new VariableInfo("@" + varName, llvmType));
@@ -484,7 +497,8 @@ public class LLVMAction extends CmashBaseListener {
                     LLVMGenerator.emit("store " + llvmType + " " + initVal.register + ", " + llvmType + "* " + localPtr);
                 }
             }
-            localVarStack.peek().put(varName, new VariableInfo(localPtr, llvmType));
+            Scope currentScope = scopes.peek();
+            currentScope.variables.put(varName, new VariableInfo(localPtr, llvmType));
         } else {
             // Global variable handling.
             String globalName = "@" + varName;
@@ -502,8 +516,8 @@ public class LLVMAction extends CmashBaseListener {
     @Override
     public void enterFunctionDefinition(CmashParser.FunctionDefinitionContext ctx) {
         // Indicate that we are inside a function.
+        scopes.push(new Scope(ScopeType.FUNCTION)); // Function's scope
         inFunction = true;
-        localVarStack.push(new HashMap<>()); // Function's scope
 
         // Retrieve the return type and map it to the corresponding LLVM type.
         String type = "void";
@@ -548,7 +562,8 @@ public class LLVMAction extends CmashBaseListener {
                 LLVMGenerator.emit("store " + paramLLVMType + " %" + paramName + ", " + paramLLVMType + "* " + localPtr);
 
                 // Record the local variable in the stack
-                localVarStack.peek().put(paramName, new VariableInfo(localPtr, paramLLVMType));
+                Scope currentScope = scopes.peek();
+                currentScope.variables.put(paramName, new VariableInfo(localPtr, paramLLVMType));
             }
         }
     }
@@ -564,10 +579,11 @@ public class LLVMAction extends CmashBaseListener {
         LLVMGenerator.endFunction();
     
         // Exit the function scope: reset the flag and pop the local stack symbol table.
-        inFunction = false;
-        if (!localVarStack.isEmpty()) {
-            localVarStack.pop();
+        while (!scopes.isEmpty() && scopes.peek().type != ScopeType.FUNCTION) {
+            scopes.pop();
         }
+        if (!scopes.isEmpty()) scopes.pop();
+        inFunction = false;
     }
 
     @Override
@@ -688,8 +704,8 @@ public class LLVMAction extends CmashBaseListener {
     @Override
     public void enterCompoundStatement(CmashParser.CompoundStatementContext ctx)
     {
-        if (inFunction && !isFunctionBody(ctx)) {
-            localVarStack.push(new HashMap<>());
+        if (!isFunctionBody(ctx)) { // Avoid duplicating function scope
+            scopes.push(new Scope(ScopeType.BLOCK)); // Block scope marker
         }
     }
 
@@ -697,9 +713,10 @@ public class LLVMAction extends CmashBaseListener {
     public void exitCompoundStatement(CmashParser.CompoundStatementContext ctx) {
 
         // Push the variables off the stack
-        if (inFunction && !isFunctionBody(ctx) && !localVarStack.isEmpty()) {
-            localVarStack.pop();
+        while (!scopes.isEmpty() && scopes.peek().type != ScopeType.BLOCK) {
+            scopes.pop();
         }
+        if (!scopes.isEmpty()) scopes.pop();
 
         int childCount = ctx.getChildCount();
         if (childCount >= 3) { // there is at least one inner node besides the braces
@@ -1338,9 +1355,19 @@ public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
         // Since a selection statement typically doesn't produce a value, we record void.
         values.put(ctx, new ValueAndType("", "void"));
     }
+    @Override
+    public void enterIterationStatement(CmashParser.IterationStatementContext ctx) {
+        scopes.push(new Scope(ScopeType.LOOP)); // Loop scope marker
+    }
 
     @Override
     public void exitIterationStatement(CmashParser.IterationStatementContext ctx) {
+    
+        while (!scopes.isEmpty() && scopes.peek().type != ScopeType.LOOP) {
+            scopes.pop();
+        }
+        if (!scopes.isEmpty()) scopes.pop();
+
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
