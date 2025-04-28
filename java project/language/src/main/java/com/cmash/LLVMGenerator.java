@@ -1,7 +1,5 @@
 package com.cmash;
 
-import java.util.ArrayList;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 class LLVMGenerator {

@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -18,7 +19,7 @@ public class LLVMAction extends CmashBaseListener {
     
     // Map variable names -> info. 
     // For local variables, pointerName will be something like "%x.addr"
-    private Map<String, VariableInfo> localVars = new HashMap<>();
+    private Stack<Map<String, VariableInfo>> localVarStack = new Stack<>();
     
     // For global variables, pointerName might be "@gVarName"
     private Map<String, VariableInfo> globalVars = new HashMap<>();
@@ -75,6 +76,21 @@ public class LLVMAction extends CmashBaseListener {
         return 0;
     }
 
+    private VariableInfo getVariableInfo(String varName) {
+        if (inFunction) {
+            // Search from top (innermost) to bottom (function scope)
+            for (int i = localVarStack.size() - 1; i >= 0; i--) {
+                Map<String, VariableInfo> scope = localVarStack.get(i);
+                if (scope.containsKey(varName)) {
+                    return scope.get(varName);
+                }
+            }
+            return null;
+        } else {
+            return globalVars.get(varName);
+        }
+    }
+
     @Override
     public void exitProgram(CmashParser.ProgramContext ctx) {
         System.out.println(LLVMGenerator.generate());
@@ -86,7 +102,7 @@ public class LLVMAction extends CmashBaseListener {
     
         // Clear global and local variable symbol tables.
         globalVars.clear();
-        localVars.clear();
+        localVarStack.clear();
     }
 
     @Override
@@ -137,7 +153,7 @@ public class LLVMAction extends CmashBaseListener {
         if (ctx.ID() != null) {
             String varName = ctx.ID().getText();
 
-            VariableInfo varInfo = inFunction ? localVars.get(varName) : globalVars.get(varName);
+            VariableInfo varInfo = inFunction ? getVariableInfo(varName) : globalVars.get(varName);
             if (varInfo != null) {
                 // Load the value from the variable pointer.
                 String tmpReg = LLVMGenerator.newTempReg();
@@ -207,7 +223,7 @@ public class LLVMAction extends CmashBaseListener {
             LLVMGenerator.emit("call void @llvm.memcpy.p0i8.p0i8.i64(i8* " + destCast + ", i8* " + srcCast + 
                               ", i64 " + arraySize + ", i1 false)");
             
-            localVars.put(varName, new VariableInfo(ptrReg, "[" + arraySize + " x i8]*"));
+            localVarStack.peek().put(varName, new VariableInfo(ptrReg, "[" + arraySize + " x i8]*"));
         } else {
             // Global variable
             LLVMGenerator.emitGlobal("@" + varName + " = constant [" + arraySize + " x i8] c\"" + escapedStr + "\\00\"");
@@ -282,7 +298,7 @@ public class LLVMAction extends CmashBaseListener {
         if (inFunction) {
             String ptrReg = "%" + varName;
             LLVMGenerator.emit(ptrReg + " = alloca " + llvmType);
-            localVars.put(varName, new VariableInfo(ptrReg, llvmType + "*"));
+            localVarStack.peek().put(varName, new VariableInfo(ptrReg, llvmType + "*"));
             if (!init.equals("zeroinitializer")) {
                 String globalName = "@__const." + varName;
                 LLVMGenerator.emitGlobal(globalName + " = constant " + llvmType + " " + init);
@@ -389,7 +405,7 @@ public class LLVMAction extends CmashBaseListener {
                 LLVMGenerator.emit("call void @llvm.memcpy.p0i8.p0i8.i64(i8* " + destCast + ", i8* " + srcCast + 
                                 ", i64 " + getMatrixSize(dims, type) + ", i1 false)");
              
-             localVars.put(varName, new VariableInfo(ptrReg, llvmType + "*"));
+             localVarStack.peek().put(varName, new VariableInfo(ptrReg, llvmType + "*"));
          } else {
              LLVMGenerator.declareGlobalMatrix(varName, llvmType, init);
              globalVars.put(varName, new VariableInfo("@" + varName, llvmType));
@@ -455,7 +471,6 @@ public class LLVMAction extends CmashBaseListener {
                 LLVMGenerator.emit(localPtr + " = alloca " + llvmType);
             }
 
-            localVars.put(varName, new VariableInfo(localPtr, llvmType));
             if (ctx.expression() != null) {
                 // Special procedure for float
                 ValueAndType initVal = values.get(ctx.expression());
@@ -469,6 +484,7 @@ public class LLVMAction extends CmashBaseListener {
                     LLVMGenerator.emit("store " + llvmType + " " + initVal.register + ", " + llvmType + "* " + localPtr);
                 }
             }
+            localVarStack.peek().put(varName, new VariableInfo(localPtr, llvmType));
         } else {
             // Global variable handling.
             String globalName = "@" + varName;
@@ -487,8 +503,7 @@ public class LLVMAction extends CmashBaseListener {
     public void enterFunctionDefinition(CmashParser.FunctionDefinitionContext ctx) {
         // Indicate that we are inside a function.
         inFunction = true;
-        // Clear local variables from any previous function.
-        localVars.clear();
+        localVarStack.push(new HashMap<>()); // Function's scope
 
         // Retrieve the return type and map it to the corresponding LLVM type.
         String type = "void";
@@ -531,8 +546,9 @@ public class LLVMAction extends CmashBaseListener {
                 // Store the incoming parameter (which is available as "%" + paramName)
                 // into the allocated stack slot.
                 LLVMGenerator.emit("store " + paramLLVMType + " %" + paramName + ", " + paramLLVMType + "* " + localPtr);
-                // Record the local variable in the symbol table.
-                localVars.put(paramName, new VariableInfo(localPtr, paramLLVMType));
+
+                // Record the local variable in the stack
+                localVarStack.peek().put(paramName, new VariableInfo(localPtr, paramLLVMType));
             }
         }
     }
@@ -547,9 +563,11 @@ public class LLVMAction extends CmashBaseListener {
         // End the function definition (emit the closing brace and a blank line).
         LLVMGenerator.endFunction();
     
-        // Exit the function scope: reset the flag and clear the local symbol table.
+        // Exit the function scope: reset the flag and pop the local stack symbol table.
         inFunction = false;
-        localVars.clear();
+        if (!localVarStack.isEmpty()) {
+            localVarStack.pop();
+        }
     }
 
     @Override
@@ -620,7 +638,7 @@ public class LLVMAction extends CmashBaseListener {
             for (TerminalNode idNode : ctx.ID()) {
                 String name = idNode.getText();
                 VariableInfo info = inFunction
-                    ? localVars.get(name)
+                    ? getVariableInfo(name)
                     : globalVars.get(name);
                 if (info == null) throw new RuntimeException(
                     "Undeclared var in call: " + name);
@@ -644,7 +662,7 @@ public class LLVMAction extends CmashBaseListener {
         if (ctx.ID() != null) {
             String name = ctx.ID().getText();
             VariableInfo info = inFunction
-                ? localVars.get(name)
+                ? getVariableInfo(name)
                 : globalVars.get(name);
 
             if (info != null) {
@@ -663,8 +681,26 @@ public class LLVMAction extends CmashBaseListener {
         values.put(ctx, new ValueAndType("0", "i32"));
     }
 
+    private boolean isFunctionBody(CmashParser.CompoundStatementContext ctx) {
+        return ctx.getParent() instanceof CmashParser.FunctionDefinitionContext;
+    }
+
+    @Override
+    public void enterCompoundStatement(CmashParser.CompoundStatementContext ctx)
+    {
+        if (inFunction && !isFunctionBody(ctx)) {
+            localVarStack.push(new HashMap<>());
+        }
+    }
+
     @Override
     public void exitCompoundStatement(CmashParser.CompoundStatementContext ctx) {
+
+        // Push the variables off the stack
+        if (inFunction && !isFunctionBody(ctx) && !localVarStack.isEmpty()) {
+            localVarStack.pop();
+        }
+
         int childCount = ctx.getChildCount();
         if (childCount >= 3) { // there is at least one inner node besides the braces
             // The last meaningful child is usually at index childCount - 2 (the last token is '}')
@@ -846,13 +882,9 @@ public class LLVMAction extends CmashBaseListener {
                     // It's an integer literal.
                     result = new ValueAndType(text, "i32");
                 }
-            } else if (inFunction && localVars.containsKey(text)) {
+            } else if (getVariableInfo(text) != null) {
                 // If the text is a variable name, retrieve its LLVM representation.
-                VariableInfo varInfo = localVars.get(text);
-                result = new ValueAndType(LLVMGenerator.loadValue(varInfo.llvmType, varInfo.pointerName), varInfo.llvmType);
-            } else if (globalVars.containsKey(text)) {
-                // If the text is a global variable name, retrieve its LLVM representation.
-                VariableInfo varInfo = globalVars.get(text);
+                VariableInfo varInfo = getVariableInfo(text);
                 result = new ValueAndType(LLVMGenerator.loadValue(varInfo.llvmType, varInfo.pointerName), varInfo.llvmType);
             } else {
                 result = new ValueAndType("0", "i32");
@@ -872,7 +904,7 @@ public class LLVMAction extends CmashBaseListener {
             ValueAndType rhs = values.get(ctx.expression());
         
             // Look up the variable pointer in localVars (if inside a function) or globalVars.
-            VariableInfo varInfo = inFunction ? localVars.get(varName) : globalVars.get(varName);
+            VariableInfo varInfo = inFunction ? getVariableInfo(varName) : globalVars.get(varName);
             if (varInfo == null) {
                 System.err.println("Error: variable " + varName + " is not declared.");
                 return;
@@ -1187,7 +1219,7 @@ public class LLVMAction extends CmashBaseListener {
             values.put(ctx, new ValueAndType(String.valueOf(ascii), "i32"));
         } else if (ctx.ID() != null) {
             String varName = ctx.ID().getText();
-            VariableInfo varInfo = inFunction ? localVars.get(varName) : globalVars.get(varName);
+            VariableInfo varInfo = inFunction ? getVariableInfo(varName) : globalVars.get(varName);
             if (varInfo != null) {
                 String tmpReg = LLVMGenerator.newTempReg();
                 LLVMGenerator.emit(tmpReg + " = load " + varInfo.llvmType + ", " +
@@ -1224,7 +1256,7 @@ public class LLVMAction extends CmashBaseListener {
     @Override
     public void exitArrayAccess(CmashParser.ArrayAccessContext ctx) {
         String varName = ctx.ID().getText();
-        VariableInfo varInfo = inFunction ? localVars.get(varName) : globalVars.get(varName);
+        VariableInfo varInfo = inFunction ? getVariableInfo(varName) : globalVars.get(varName);
         
         if (varInfo == null) {
             System.err.println("Error: variable " + varName + " is not declared.");
@@ -1420,13 +1452,9 @@ public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
             LLVMGenerator.emit("; Read token " + varName + "\n");
             ValueAndType register;
             VariableInfo varInfo;
-            if (inFunction && localVars.containsKey(varName)) {
+            if (getVariableInfo(varName) != null) {
                 // If the text is a variable name, retrieve its LLVM representation.
-                varInfo = localVars.get(varName);
-                register = new ValueAndType(LLVMGenerator.loadValue(varInfo.llvmType, varInfo.pointerName), varInfo.llvmType);
-            } else if (globalVars.containsKey(varName)) {
-                // If the text is a global variable name, retrieve its LLVM representation.
-                varInfo = globalVars.get(varName);
+                varInfo = getVariableInfo(varName);
                 register = new ValueAndType(LLVMGenerator.loadValue(varInfo.llvmType, varInfo.pointerName), varInfo.llvmType);
             }
             else {
