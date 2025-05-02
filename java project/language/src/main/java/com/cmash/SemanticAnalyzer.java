@@ -12,6 +12,8 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
 
     // Stack handling variable names
     private final Stack<Map<String, Boolean>> scopeStack = new Stack<>();
+    // Map variable name → its return type (as a string)
+    private final Map<String,String> variableTypes = new HashMap<>();
     // Map function name → its return type (as a string)
     private final Map<String,String> functionReturnTypes = new HashMap<>();
     // Map function name → ammount of parameters as types (as a string)
@@ -169,6 +171,30 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
         }
     
         visitChildren(ctx);
+        return "unknown";
+    }
+
+    public String evaluatePrimaryType (CmashParser.PrimaryContext ctx) {
+        if (ctx.INT() != null) {
+            return "int";
+        } else if (ctx.FLOAT() != null) {
+            return "float";
+        } else if (ctx.DOUBLE() != null) {
+            return "double";
+        } else if (ctx.BOOL_LITERAL() != null) {
+            return "bool";
+        } else if (ctx.CHAR_LITERAL() != null) {
+            return "char";  
+        } else if (ctx.ID() != null && ctx.getChildCount() == 1 ) {
+            String varName = ctx.ID().getText();
+            if (!isDeclared(varName)) {
+                reportError(ctx.start, "Variable '" + varName + "' is used but not declared.");
+                return "error";
+            } 
+
+            return variableTypes.get(varName);
+        }
+        
         return "unknown";
     }
     
@@ -369,6 +395,53 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
         visitChildren(ctx);
         exitScope(); // Exit function scope
     
+        return null;
+    }
+
+    @Override
+    public Void visitRelational(CmashParser.RelationalContext ctx) {
+        if (ctx.additive(0) == null || ctx.additive(1) == null) {
+            return null; // No valid relational expression
+        }
+
+        String leftType = evaluatePrimaryType(ctx.additive(0).multiplicative(0).primary(0));
+        String rightType = evaluatePrimaryType(ctx.additive(1).multiplicative(0).primary(0));
+
+        if (leftType.equals("unknown") || rightType.equals("unknown")) {
+            reportError(ctx.start, "Relational operator '" + ctx.getChild(1).getText() + "' has unknown operand types.");
+            return null;
+        }
+
+        if (!leftType.equals(rightType)) {
+            reportError(ctx.start, "Relational operator '" + ctx.getChild(1).getText() + "' expects operands of the same type, got '" 
+                                             + leftType + "' and '" + rightType + "'.");
+            return null;
+        }
+    
+        if (!isNumeric(leftType) || !isNumeric(rightType)) {
+            reportError(ctx.start, "Relational operator '" + ctx.getChild(1).getText() + "' expects numeric operands, got '" 
+                                             + leftType + "' and '" + rightType + "'.");
+            return null;
+        }
+    
+        return null;
+    }
+
+    @Override
+    public Void visitDeclaration (CmashParser.DeclarationContext ctx) {
+        // Handle variable declarations
+        String type = ctx.type().getText();
+        for (CmashParser.VariableContext varCtx : ctx.variableList().variable()) {
+            String varName = varCtx.ID().getText();
+            if (!isDeclared(varName)) {
+                Map<String, Boolean> scope = getCurrentScope();
+                scope.put(varName, false); // Mark as declared but not assigned
+                variableTypes.put(varName, type); // Store the variable type
+            } else {
+                reportError(ctx.start, "Variable '" + varName + "' is redeclared.");
+            }
+        }
+
         return null;
     }
 }

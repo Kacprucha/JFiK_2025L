@@ -228,7 +228,7 @@ iterationStatement
 
 // A for loop
 loopStatement
-    : FOR '(' declaration? ';' assignment ';' expression ')' statement
+    : FOR '(' declaration? ';' equality ';' expression ')' statement
     ;
 
 // I/O Statements

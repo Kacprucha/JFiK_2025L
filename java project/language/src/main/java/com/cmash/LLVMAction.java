@@ -24,7 +24,7 @@ public class LLVMAction extends CmashBaseListener {
     // For global variables, pointerName might be "@gVarName"
     private Map<String, VariableInfo> globalVars = new HashMap<>();
 
-      // Map function name → its LLVM return type
+    // Map function name → its LLVM return type
     private final Map<String,String> functionReturnTypes = new HashMap<>();
 
     // Map to store the parameter values for function calls
@@ -40,6 +40,8 @@ public class LLVMAction extends CmashBaseListener {
 
     // Map to store the aggregated list of print arguments for each printArgs context.
     private Map<CmashParser.PrintArgsContext, PrintArgList> printArgLists = new HashMap<>();
+
+    private final Map<CmashParser.LoopStatementContext,LoopLabels> loopLabels = new HashMap<>();
 
 
     private String mapType(String type) {
@@ -134,6 +136,15 @@ public class LLVMAction extends CmashBaseListener {
         else if (ctx.stringDeclaration() != null) {
             ValueAndType stringDecl = values.get(ctx.stringDeclaration());
             values.put(ctx, stringDecl);
+        }
+
+        // if this decl is the first child inside a for(…;…;…)
+        if ( ctx.getParent() instanceof CmashParser.LoopStatementContext && ((CmashParser.LoopStatementContext)ctx.getParent()).declaration() == ctx ) {
+            LoopLabels L = loopLabels.get(ctx.getParent());
+            // terminate entry and jump to cond
+            LLVMGenerator.emit("br label %" + L.condLabel);
+            // start the cond block
+            LLVMGenerator.emitBlock(L.condLabel);
         }
     }
 
@@ -1006,6 +1017,17 @@ public class LLVMAction extends CmashBaseListener {
     
         // Store the final computed equality result in the values map.
         values.put(ctx, leftVAT);
+
+        if (ctx.getParent() instanceof CmashParser.LoopStatementContext loop) {
+            LoopLabels L = loopLabels.get(loop);
+            ValueAndType condVat = values.get(ctx);
+            // branch to body or end
+            LLVMGenerator.emit("br i1 " + condVat.register
+                             + ", label %" + L.bodyLabel
+                             + ", label %" + L.endLabel);
+            // open the body block
+            LLVMGenerator.emitBlock(L.bodyLabel);
+        }
     }
 
     @Override
@@ -1372,8 +1394,41 @@ public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
     }
 
     @Override
+    public void enterLoopStatement(CmashParser.LoopStatementContext ctx) {
+        // 1) push a LOOP scope so locals in the init/declaration don't escape
+        scopes.push(new Scope(ScopeType.LOOP));
+
+        // 2) generate 4 labels
+        LoopLabels L = new LoopLabels(
+            LLVMGenerator.newLabel(),    // init
+            LLVMGenerator.newLabel(),    // cond
+            LLVMGenerator.newLabel(),    // body
+            LLVMGenerator.newLabel(),    // update
+            LLVMGenerator.newLabel()     // end
+        );
+        loopLabels.put(ctx, L);
+    }
+
+    @Override
     public void exitLoopStatement(CmashParser.LoopStatementContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        LoopLabels ll = loopLabels.get(ctx);
+
+        // — close body → jump to update
+        LLVMGenerator.emit("br label %" + ll.updateLabel);
+
+        // — open update block
+        LLVMGenerator.emitBlock(ll.updateLabel);
+        // emit your “Iter = Iter + 1” IR here
+        values.get(ctx.expression());
+        // loop back to cond
+        LLVMGenerator.emit("br label %" + ll.condLabel);
+
+        // — open end block
+        LLVMGenerator.emitBlock(ll.endLabel);
+
+        // pop your LOOP scope…
+        while (!scopes.isEmpty() && scopes.peek().type != ScopeType.LOOP) scopes.pop();
+        if (!scopes.isEmpty()) scopes.pop();
     }
 
     @Override

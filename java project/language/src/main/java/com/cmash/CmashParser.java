@@ -1,13 +1,26 @@
 package com.cmash;
 // Generated from Cmash.g4 by ANTLR 4.13.2
-import org.antlr.v4.runtime.atn.*;
-import org.antlr.v4.runtime.dfa.DFA;
-import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.misc.*;
-import org.antlr.v4.runtime.tree.*;
 import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
+
+import org.antlr.v4.runtime.FailedPredicateException;
+import org.antlr.v4.runtime.NoViableAltException;
+import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.RuntimeMetaData;
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.TokenStream;
+import org.antlr.v4.runtime.Vocabulary;
+import org.antlr.v4.runtime.VocabularyImpl;
+import org.antlr.v4.runtime.atn.ATN;
+import org.antlr.v4.runtime.atn.ATNDeserializer;
+import org.antlr.v4.runtime.atn.ParserATNSimulator;
+import org.antlr.v4.runtime.atn.PredictionContextCache;
+import org.antlr.v4.runtime.dfa.DFA;
+import org.antlr.v4.runtime.tree.ParseTreeListener;
+import org.antlr.v4.runtime.tree.ParseTreeVisitor;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast", "CheckReturnValue", "this-escape"})
 public class CmashParser extends Parser {
@@ -3225,8 +3238,8 @@ public class CmashParser extends Parser {
 	@SuppressWarnings("CheckReturnValue")
 	public static class LoopStatementContext extends ParserRuleContext {
 		public TerminalNode FOR() { return getToken(CmashParser.FOR, 0); }
-		public AssignmentContext assignment() {
-			return getRuleContext(AssignmentContext.class,0);
+		public EqualityContext equality() {
+			return getRuleContext(EqualityContext.class,0);
 		}
 		public ExpressionContext expression() {
 			return getRuleContext(ExpressionContext.class,0);
@@ -3280,7 +3293,7 @@ public class CmashParser extends Parser {
 			setState(468);
 			match(T__7);
 			setState(469);
-			assignment();
+			equality();
 			setState(470);
 			match(T__7);
 			setState(471);
@@ -3932,7 +3945,7 @@ public class CmashParser extends Parser {
 		"\u01d2\u0005\n\u0000\u0000\u01d1\u01d3\u0003\u0002\u0001\u0000\u01d2\u01d1"+
 		"\u0001\u0000\u0000\u0000\u01d2\u01d3\u0001\u0000\u0000\u0000\u01d3\u01d4"+
 		"\u0001\u0000\u0000\u0000\u01d4\u01d5\u0005\b\u0000\u0000\u01d5\u01d6\u0003"+
-		"0\u0018\u0000\u01d6\u01d7\u0005\b\u0000\u0000\u01d7\u01d8\u0003.\u0017"+
+		"2\u0019\u0000\u01d6\u01d7\u0005\b\u0000\u0000\u01d7\u01d8\u0003.\u0017"+
 		"\u0000\u01d8\u01d9\u0005\u000b\u0000\u0000\u01d9\u01da\u0003*\u0015\u0000"+
 		"\u01daK\u0001\u0000\u0000\u0000\u01db\u01dc\u0005.\u0000\u0000\u01dc\u01dd"+
 		"\u0005\n\u0000\u0000\u01dd\u01de\u0003P(\u0000\u01de\u01e0\u0005\u000b"+
