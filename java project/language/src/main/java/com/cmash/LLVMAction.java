@@ -981,51 +981,51 @@ public class LLVMAction extends CmashBaseListener {
         // If there is only one relational expression, simply propagate its value.
         if (ctx.relational().size() == 1) {
             values.put(ctx, values.get(ctx.relational(0)));
-            return;
         }
-    
-        // Start with the result of the first relational subexpression.
-        ValueAndType leftVAT = values.get(ctx.relational(0));
-    
-        // Process each equality operator and its corresponding relational subexpression.
-        for (int i = 1; i < ctx.relational().size(); i++) {
-            // Retrieve the operator; it should be at positions 1, 3, 5, ... in the parse tree.
-            String op = ctx.getChild(2 * i - 1).getText(); // "==" or "!="
-            ValueAndType rightVAT = values.get(ctx.relational(i));
+        else{
+            // Start with the result of the first relational subexpression.
+            ValueAndType leftVAT = values.get(ctx.relational(0));
         
-            // Assume both operands share the same type.
-            String resultType = leftVAT.llvmType;
-            String newReg = LLVMGenerator.newTempReg();
-        
-            if (resultType.equals("i32") || resultType.equals("i1") || resultType.equals("i8")) {
-                // For integral types, use icmp with predicates eq (for "==") or ne (for "!=").
-                String predicate = op.equals("==") ? "eq" : "ne";
-                LLVMGenerator.emit(newReg + " = icmp " + predicate + " " + resultType + " " 
-                                   + leftVAT.register + ", " + rightVAT.register);
-                leftVAT = new ValueAndType(newReg, "i1");
-            } else if (resultType.equals("float") || resultType.equals("double")) {
-                // For floating-point types, use fcmp with predicates oeq (for "==") or one (for "!=").
-                String predicate = op.equals("==") ? "oeq" : "one";
-                LLVMGenerator.emit(newReg + " = fcmp " + predicate + " " + resultType + " " 
-                                   + leftVAT.register + ", " + rightVAT.register);
-                leftVAT = new ValueAndType(newReg, "i1");
-            } else {
-                // Fallback: if the type is unrecognized, default to false.
-                leftVAT = new ValueAndType("0", "i1");
+            // Process each equality operator and its corresponding relational subexpression.
+            for (int i = 1; i < ctx.relational().size(); i++) {
+                // Retrieve the operator; it should be at positions 1, 3, 5, ... in the parse tree.
+                String op = ctx.getChild(2 * i - 1).getText(); // "==" or "!="
+                ValueAndType rightVAT = values.get(ctx.relational(i));
+            
+                // Assume both operands share the same type.
+                String resultType = leftVAT.llvmType;
+                String newReg = LLVMGenerator.newTempReg();
+            
+                if (resultType.equals("i32") || resultType.equals("i1") || resultType.equals("i8")) {
+                    // For integral types, use icmp with predicates eq (for "==") or ne (for "!=").
+                    String predicate = op.equals("==") ? "eq" : "ne";
+                    LLVMGenerator.emit(newReg + " = icmp " + predicate + " " + resultType + " " 
+                                    + leftVAT.register + ", " + rightVAT.register);
+                    leftVAT = new ValueAndType(newReg, "i1");
+                } else if (resultType.equals("float") || resultType.equals("double")) {
+                    // For floating-point types, use fcmp with predicates oeq (for "==") or one (for "!=").
+                    String predicate = op.equals("==") ? "oeq" : "one";
+                    LLVMGenerator.emit(newReg + " = fcmp " + predicate + " " + resultType + " " 
+                                    + leftVAT.register + ", " + rightVAT.register);
+                    leftVAT = new ValueAndType(newReg, "i1");
+                } else {
+                    // Fallback: if the type is unrecognized, default to false.
+                    leftVAT = new ValueAndType("0", "i1");
+                }
             }
+        
+            // Store the final computed equality result in the values map.
+            values.put(ctx, leftVAT);
         }
-    
-        // Store the final computed equality result in the values map.
-        values.put(ctx, leftVAT);
 
         if (ctx.getParent() instanceof CmashParser.LoopStatementContext loop) {
             LoopLabels L = loopLabels.get(loop);
             ValueAndType condVat = values.get(ctx);
-            // branch to body or end
+            // Emit branch based on condition
             LLVMGenerator.emit("br i1 " + condVat.register
                              + ", label %" + L.bodyLabel
                              + ", label %" + L.endLabel);
-            // open the body block
+            // Start the body block
             LLVMGenerator.emitBlock(L.bodyLabel);
         }
     }
