@@ -41,7 +41,7 @@ public class LLVMAction extends CmashBaseListener {
     // Map to store the aggregated list of print arguments for each printArgs context.
     private Map<CmashParser.PrintArgsContext, PrintArgList> printArgLists = new HashMap<>();
 
-    private final Map<CmashParser.LoopStatementContext,LoopLabels> loopLabels = new HashMap<>();
+    private final Map<ParserRuleContext,LoopLabels> loopLabels = new HashMap<>();
 
 
     private String mapType(String type) {
@@ -769,6 +769,12 @@ public class LLVMAction extends CmashBaseListener {
     
         // Store the computed value (or default) for the statement node.
         values.put(ctx, result);
+
+        // While loop
+        if (ctx.getParent() instanceof CmashParser.IterationStatementContext) {
+            LoopLabels L = loopLabels.get(ctx.getParent());
+            LLVMGenerator.emit("br label %" + L.condLabel); // Jump back to condition
+        }
     }
 
     @Override
@@ -921,6 +927,20 @@ public class LLVMAction extends CmashBaseListener {
         
         //System.out.println(";" + result.llvmType + " " + result.register);
         values.put(ctx, result);
+
+        // While loop 
+        if (ctx.getParent() instanceof CmashParser.IterationStatementContext) {
+            LoopLabels L = loopLabels.get(ctx.getParent());
+            ValueAndType condVAT = values.get(ctx);
+    
+            // Emit branch based on condition
+            LLVMGenerator.emit("br i1 " + condVAT.register 
+                             + ", label %" + L.bodyLabel 
+                             + ", label %" + L.endLabel);
+            
+            // Start the body block
+            LLVMGenerator.emitBlock(L.bodyLabel);
+        }
     }
 
     @Override
@@ -1379,18 +1399,34 @@ public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
     }
     @Override
     public void enterIterationStatement(CmashParser.IterationStatementContext ctx) {
-        scopes.push(new Scope(ScopeType.LOOP)); // Loop scope marker
+        scopes.push(new Scope(ScopeType.LOOP));
+    
+        // Generate labels (init/update are unused for while loops)
+        LoopLabels L = new LoopLabels(
+            "",                             // initLabel (unused)
+            LLVMGenerator.newLabel(),       // condLabel
+            LLVMGenerator.newLabel(),       // bodyLabel
+            "",                             // updateLabel (unused)
+            LLVMGenerator.newLabel()        // endLabel
+        );
+        loopLabels.put(ctx, L);
+    
+        // Jump to condition block
+        LLVMGenerator.emit("br label %" + L.condLabel);
+        LLVMGenerator.emitBlock(L.condLabel);
     }
 
     @Override
     public void exitIterationStatement(CmashParser.IterationStatementContext ctx) {
+        LoopLabels L = loopLabels.get(ctx);
     
-        while (!scopes.isEmpty() && scopes.peek().type != ScopeType.LOOP) {
-            scopes.pop();
-        }
+        // Emit end block
+        LLVMGenerator.emitBlock(L.endLabel);
+        loopLabels.remove(ctx);
+    
+        // Pop LOOP scope
+        while (!scopes.isEmpty() && scopes.peek().type != ScopeType.LOOP) scopes.pop();
         if (!scopes.isEmpty()) scopes.pop();
-
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
