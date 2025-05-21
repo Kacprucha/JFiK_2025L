@@ -43,10 +43,13 @@ class LLVMGenerator {
         return "label" + (labelCount++);
     }
 
+    public static String newLabel(String prefix) {
+        return prefix + (labelCount++);
+    }
+
     public static void setCurrentBlock(String label) {
         currentBlock = label;
     }
-
 
     public static void startFunction(String funcName, String llvmReturnType, String paramSig) {
         emit("define " + llvmReturnType + " @" + funcName + "(" + paramSig + ") {");
@@ -63,9 +66,9 @@ class LLVMGenerator {
     }
 
     public static SelectionLabels newSelectionLabels(boolean hasElse) {
-        String thenLabel = newLabel();
-        String mergeLabel = newLabel();
-        String elseLabel = hasElse ? newLabel() : null;
+        String thenLabel = newLabel("label_then");
+        String mergeLabel = newLabel("label_merge");
+        String elseLabel = hasElse ? newLabel("label_else") : null;
         return new SelectionLabels(thenLabel, elseLabel, mergeLabel);
     }
     

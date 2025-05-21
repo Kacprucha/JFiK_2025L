@@ -775,6 +775,34 @@ public class LLVMAction extends CmashBaseListener {
             LoopLabels L = loopLabels.get(ctx.getParent());
             LLVMGenerator.emit("br label %" + L.condLabel); // Jump back to condition
         }
+
+        // If statement
+        if (ctx.getParent() instanceof CmashParser.SelectionStatementContext) {
+            CmashParser.SelectionStatementContext ifCtx = (CmashParser.SelectionStatementContext) ctx.getParent();
+            SelectionLabels labels = selectionLabels.get(ifCtx);
+
+            // Is this the 'then' statement? (ctx.statement(0))
+            if (ifCtx.statement(0) == ctx) {
+                LLVMGenerator.emit("; THEN block ends for " + labels.thenLabel);
+                // After the 'then' block, unconditionally jump to the 'merge' label.
+                LLVMGenerator.emit("br label %" + labels.mergeLabel);
+
+                // If there's an ELSE part, emit the 'else' label now.
+                // The code for the 'else' block (ifCtx.statement(1)) will follow naturally.
+                if (ifCtx.ELSE() != null) {
+                    LLVMGenerator.emit(labels.elseLabel + ":");
+                    LLVMGenerator.emit("; ELSE block starts for " + labels.elseLabel);
+                }
+            }
+            // Is this the 'else' statement? (ctx.statement(1))
+            // (This check also handles 'else if' because the 'else if' is parsed as an 'if' statement
+            // being the single statement of the 'else' part of the outer 'if')
+            else if (ifCtx.ELSE() != null && ifCtx.statement(1) == ctx) {
+                LLVMGenerator.emit("; ELSE block ends for " + labels.elseLabel);
+                // After the 'else' block, unconditionally jump to the 'merge' label.
+                LLVMGenerator.emit("br label %" + labels.mergeLabel);
+            }
+        }
     }
 
     @Override
@@ -940,6 +968,25 @@ public class LLVMAction extends CmashBaseListener {
             
             // Start the body block
             LLVMGenerator.emitBlock(L.bodyLabel);
+        }
+
+        // If statemt
+        if (ctx.getParent() instanceof CmashParser.SelectionStatementContext) {
+            CmashParser.SelectionStatementContext ifCtx = (CmashParser.SelectionStatementContext) ctx.getParent();
+            // Ensure it's THE expression for this if, not one nested deeper
+            if (ifCtx.expression() == ctx) {
+                SelectionLabels labels = selectionLabels.get(ifCtx);
+                ValueAndType condVAT = values.get(ctx); // Get the result of the condition
+                String condReg = condVAT.register;
+
+                LLVMGenerator.emit("; Condition for IF evaluated: " + condReg + " (" + ctx.getText() + ")");
+                // Emit the conditional branch using the helper
+                LLVMGenerator.emitConditionalBranch(condReg, labels);
+
+                // Emit the 'then' label. Code for the 'then' block will follow naturally.
+                LLVMGenerator.emit(labels.thenLabel + ":");
+                LLVMGenerator.emit("; THEN block starts for " + labels.thenLabel);
+            }
         }
     }
 
@@ -1356,47 +1403,35 @@ public class LLVMAction extends CmashBaseListener {
 
     @Override
     public void enterSelectionStatement(CmashParser.SelectionStatementContext ctx) {
-        // Create labels using the helper. If an ELSE exists, pass true.
+        // Create labels. If an ELSE exists, pass true.
         SelectionLabels labels = LLVMGenerator.newSelectionLabels(ctx.ELSE() != null);
-        // Store them in a local map for retrieval later.
+        // Store them in the map for retrieval by this context and its relevant children.
         selectionLabels.put(ctx, labels);
-    
-        // Optionally, you can emit a comment for debugging.
-        LLVMGenerator.emit("; Entering selection statement with labels: then=" + labels.thenLabel +
-                           " else=" + labels.elseLabel + " merge=" + labels.mergeLabel);
+
+        // Debugging comment
+        LLVMGenerator.emit("; Entering IF construct related to labels: then=" + labels.thenLabel +
+                           (labels.elseLabel != null ? " else=" + labels.elseLabel : "") +
+                           " merge=" + labels.mergeLabel);
+        // DO NOT emit conditional branch or then-label yet.
+        // The condition expression (ctx.expression()) will be visited next.
     }
 
     @Override
-public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
-        // Retrieve the condition's computed value (should be i1).
-        ValueAndType condVAT = values.get(ctx.expression());
-        String condReg = condVAT.register;
-    
-        // Retrieve the labels from our map.
+    public void exitSelectionStatement(CmashParser.SelectionStatementContext ctx) {
         SelectionLabels labels = selectionLabels.get(ctx);
-    
-        // Use LLVMGenerator's helper to emit the conditional branch.
-        LLVMGenerator.emitConditionalBranch(condReg, labels);
-    
-        // Emit the then branch label.
-        LLVMGenerator.emit(labels.thenLabel + ":");
-        // (The IR for the then-statement is assumed to be generated in its exit method.)
-        // After then, jump unconditionally to merge.
-        LLVMGenerator.emit("br label %" + labels.mergeLabel);
-    
-        // If there is an else branch, emit its label and branch to merge.
-        if (labels.elseLabel != null) {
-            LLVMGenerator.emit(labels.elseLabel + ":");
-            // (The IR for the else-statement is assumed to be generated.)
-            LLVMGenerator.emit("br label %" + labels.mergeLabel);
-        }
-    
-        // Finally, emit the merge label.
+
+        // All branching logic and block-specific jumps should have been emitted by now.
+        // The only thing left is to emit the final 'merge' label.
         LLVMGenerator.emit(labels.mergeLabel + ":");
-    
-        // Since a selection statement typically doesn't produce a value, we record void.
+        LLVMGenerator.emit("; IF construct ends, merged at " + labels.mergeLabel);
+
+        // Clean up the labels for this context
+        selectionLabels.remove(ctx);
+
+        // A selection statement itself doesn't produce a value.
         values.put(ctx, new ValueAndType("", "void"));
     }
+    
     @Override
     public void enterIterationStatement(CmashParser.IterationStatementContext ctx) {
         scopes.push(new Scope(ScopeType.LOOP));

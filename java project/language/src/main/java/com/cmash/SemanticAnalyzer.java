@@ -407,6 +407,10 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
         String leftType = evaluatePrimaryType(ctx.additive(0).multiplicative(0).primary(0));
         String rightType = evaluatePrimaryType(ctx.additive(1).multiplicative(0).primary(0));
 
+        if (leftType == null || rightType == null) {
+            return null; // No valid relational expression
+        }
+
         if (leftType.equals("unknown") || rightType.equals("unknown")) {
             reportError(ctx.start, "Relational operator '" + ctx.getChild(1).getText() + "' has unknown operand types.");
             return null;

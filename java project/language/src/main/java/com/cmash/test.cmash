@@ -1,17 +1,30 @@
+void Adding(int Value, int Iterations) {
+    print("Beggingin value")
+    print(Value)
+
+    for(int Iter = 0; Iter < Iterations; Iter = Iter + 1) {
+        Value = Value + 1
+    }
+
+    print("Endggingin value")
+    print(Value)
+}
+
 int Main () {
 
-    double Test = 6.9
-    
-    for (int Iter = 0; Iter < 5 ; Iter = Iter + 1) {
-        print(Iter)
-    }
+    int MyInt
 
-    int X = -1
-    while(X < 3)
-    {
-        print(X)
-        X = X + 1
-    }
+    read(MyInt)
+
+    int Resoult = 0
+
+    print("Beggingin result")
+    print(Resoult)
+
+    Adding(Resoult, MyInt)
+
+    print("Endggingin result")
+    print(Resoult)
     
     return 0
 }

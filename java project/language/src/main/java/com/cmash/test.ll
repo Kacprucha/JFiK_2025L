@@ -18,28 +18,84 @@ declare i32 @scanf(i8*, ...)
 @space = constant [2 x i8] c" \00"
 @newline = constant [2 x i8] c"\0A\00"
 @doubleToFloat = global double 0.0
+@.str0 = constant [16 x i8] c"Beggingin value\00"
+@.str1 = constant [17 x i8] c"Endggingin value\00"
+@.str2 = constant [17 x i8] c"Beggingin result\00"
+@.str3 = constant [18 x i8] c"Endggingin result\00"
 
-define i32 @Main() {
+define void @Adding(i32 %Value, i32 %Iterations) {
 entry:
-%Test.addr = alloca double, align 8
-store double 6.9, double* %Test.addr
+%Value.addr = alloca i32
+store i32 %Value, i32* %Value.addr
+%Iterations.addr = alloca i32
+store i32 %Iterations, i32* %Iterations.addr
+%t0 = load i32, i32* %Value.addr
+%t1 = load i32, i32* %Iterations.addr
+; Entering IO statement
+; Exiting printArgs with 1 arguments
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str0)
+; Entering IO statement
+%t2 = load i32, i32* %Value.addr
+; Exiting printArgs with 1 arguments
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strpi, i32 0, i32 0), i32 %t2)
 %Iter.addr = alloca i32
 store i32 0, i32* %Iter.addr
 br label %label1
 label1:
-%t0 = load i32, i32* %Iter.addr
-%t1 = icmp slt i32 %t0, 5
-%t2 = load i32, i32* %Iter.addr
-%t3 = add i32 %t2, 1
-store i32 %t3, i32* %Iter.addr
-; Entering IO statement
-%t4 = load i32, i32* %Iter.addr
-; Exiting printArgs with 1 arguments
-call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strpi, i32 0, i32 0), i32 %t4)
+%t3 = load i32, i32* %Iter.addr
+%t4 = load i32, i32* %Iterations.addr
+%t5 = icmp slt i32 %t3, %t4
+br i1 %t5, label %label2, label %label4
+label2:
+%t6 = load i32, i32* %Iter.addr
+%t7 = add i32 %t6, 1
+store i32 %t7, i32* %Iter.addr
+%t8 = load i32, i32* %Value.addr
+%t9 = add i32 %t8, 1
+store i32 %t9, i32* %Value.addr
+; Evaluated expression statement, result in %t9
 br label %label3
 label3:
 br label %label1
 label4:
+; Entering IO statement
+; Exiting printArgs with 1 arguments
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str1)
+; Entering IO statement
+%t10 = load i32, i32* %Value.addr
+; Exiting printArgs with 1 arguments
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strpi, i32 0, i32 0), i32 %t10)
+ret void
+}
+
+define i32 @Main() {
+entry:
+%MyInt.addr = alloca i32
+; Entering IO statement
+; Read token MyInt
+
+%t11 = load i32, i32* %MyInt.addr
+call i32 (i8*, ...) @scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @strd_in, i32 0, i32 0), i32* %MyInt.addr)
+%Resoult.addr = alloca i32
+store i32 0, i32* %Resoult.addr
+; Entering IO statement
+; Exiting printArgs with 1 arguments
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str2)
+; Entering IO statement
+%t12 = load i32, i32* %Resoult.addr
+; Exiting printArgs with 1 arguments
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strpi, i32 0, i32 0), i32 %t12)
+%t13 = load i32, i32* %Resoult.addr
+%t14 = load i32, i32* %MyInt.addr
+call void @Adding(i32 %t13, i32 %t14)
+; Evaluated expression statement, result in
+; Entering IO statement
+; Exiting printArgs with 1 arguments
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strs, i32 0, i32 0), i8* @.str3)
+; Entering IO statement
+%t15 = load i32, i32* %Resoult.addr
+; Exiting printArgs with 1 arguments
+call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @strpi, i32 0, i32 0), i32 %t15)
 ret i32 0
 }
 
