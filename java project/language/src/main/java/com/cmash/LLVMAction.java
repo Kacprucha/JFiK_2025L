@@ -18,7 +18,7 @@ public class LLVMAction extends CmashBaseListener {
     private static int matrixConstCounter = 0;  // Add this at the class level
     
     // Local variables kept in different scopes
-    private enum ScopeType { GLOBAL, FUNCTION, LOOP, CLASS, BLOCK }
+    private enum ScopeType { GLOBAL, FUNCTION, LOOP, CLASS, BLOCK, STRUCT }
     private Stack<Scope> scopes = new Stack<>();
     
     // For global variables, pointerName might be "@gVarName"
@@ -42,11 +42,17 @@ public class LLVMAction extends CmashBaseListener {
     private Map<CmashParser.PrintArgsContext, PrintArgList> printArgLists = new HashMap<>();
 
     private final Map<ParserRuleContext,LoopLabels> loopLabels = new HashMap<>();
+    private Map<String, StructInfo> structs = new HashMap<>();
+    private String currentStructName = null;
 
 
     private String mapType(String type) {
         // Remove any whitespace for safety.
         type = type.trim();
+        if (type.startsWith("struct ")) {
+            return "%struct." + type.substring(7);
+        }
+
         switch (type) {
             case "int":
                 return "i32";
@@ -85,6 +91,41 @@ public class LLVMAction extends CmashBaseListener {
         Scope(ScopeType type) {
             this.type = type;
             this.variables = new HashMap<>();
+        }
+    }
+
+    private static class StructInfo {
+        List<Member> members = new ArrayList<>();
+
+        static class Member {
+            String name;
+            String llvmType;
+            Member(String name, String llvmType) {
+                this.name = name;
+                this.llvmType = llvmType;
+            }
+        }
+
+        public void addMember(String name, String llvmType) {
+            members.add(new Member(name, llvmType));
+        }
+
+        public int getFieldIndex(String name) {
+            for (int i = 0; i < members.size(); i++) {
+                if (members.get(i).name.equals(name)) return i;
+            }
+            return -1;
+        }
+
+        public String getMemberType(String name) {
+            for (Member m : members) {
+                if (m.name.equals(name)) return m.llvmType;
+            }
+            return null;
+        }
+
+        public List<String> getMemberTypes() {
+            return members.stream().map(m -> m.llvmType).collect(Collectors.toList());
         }
     }
 
@@ -480,8 +521,15 @@ public class LLVMAction extends CmashBaseListener {
             }
         }
 
-        // If we're inside a function, handle local variables.
-        if (inFunction) {
+        if (llvmType.startsWith("%struct.")) {
+            // Allocate struct memory
+            String ptrReg = "%" + varName;
+            LLVMGenerator.emit(ptrReg + " = alloca " + llvmType);
+            
+            // Store in current scope
+            Scope currentScope = scopes.peek();
+            currentScope.variables.put(varName, new VariableInfo(ptrReg, llvmType + "*"));
+        }else if (inFunction) {
             // When allocating memory for a new variable
             String localPtr = "%" + varName + ".addr";
             // If the variable is a float, add ", align 4" to the alloca instruction.
@@ -598,18 +646,38 @@ public class LLVMAction extends CmashBaseListener {
     }
 
     @Override
+    public void enterStructDefinition(CmashParser.StructDefinitionContext ctx) {
+        currentStructName = ctx.ID().getText();
+        structs.put(currentStructName, new StructInfo());
+        scopes.push(new Scope(ScopeType.STRUCT));  // Use STRUCT scope
+    }
+
+    @Override
     public void exitStructDefinition(CmashParser.StructDefinitionContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        // Emit LLVM struct type definition
+        StructInfo info = structs.get(currentStructName);
+        String llvmType = "%struct." + currentStructName + " = type { " +
+            info.getMemberTypes().stream().collect(Collectors.joining(", ")) + " }";
+        LLVMGenerator.emitGlobal(llvmType);
+        
+        scopes.pop();  // Exit STRUCT scope
+        currentStructName = null;
     }
 
     @Override
     public void exitCompoundStruct(CmashParser.CompoundStructContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        //throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void exitStructMember(CmashParser.StructMemberContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        String memberName = ctx.ID().getText();
+        String memberType = mapType(ctx.type().getText());
+        structs.get(currentStructName).addMember(memberName, memberType);
+        
+        // Add to STRUCT scope
+        Scope currentScope = scopes.peek();
+        currentScope.variables.put(memberName, new VariableInfo("", memberType)); // Pointer not needed here
     }
 
     @Override
@@ -988,6 +1056,17 @@ public class LLVMAction extends CmashBaseListener {
                 LLVMGenerator.emit("; THEN block starts for " + labels.thenLabel);
             }
         }
+
+        if (ctx.fieldAccess() != null) {
+            // Get the computed pointer from fieldAccess
+            ValueAndType ptrVAT = values.get(ctx.fieldAccess());
+            
+            // Load the value from the struct field
+            String tmpReg = LLVMGenerator.newTempReg();
+            LLVMGenerator.emit(tmpReg + " = load " + ptrVAT.llvmType + ", " + ptrVAT.llvmType + "* " + ptrVAT.register);
+            values.put(ctx, new ValueAndType(tmpReg, ptrVAT.llvmType));
+            return;
+        }
     }
 
     @Override
@@ -1261,7 +1340,43 @@ public class LLVMAction extends CmashBaseListener {
 
     @Override
     public void exitFieldAccess(CmashParser.FieldAccessContext ctx) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        List<TerminalNode> ids = ctx.ID();
+        String baseVarName = ids.get(0).getText();
+        
+        // Get base variable
+        VariableInfo baseVar = getVariableInfo(baseVarName);
+        if (baseVar == null) {
+            System.err.println("Error: " + baseVarName + " not declared");
+            values.put(ctx, new ValueAndType("0", "i32"));
+            return;
+        }
+
+        // Get struct type (e.g., "%struct.Person" → "Person")
+        String structType = baseVar.llvmType.replaceAll("\\*", "");
+        String structName = structType.substring("%struct.".length());
+
+        StructInfo struct = structs.get(structName);
+        if (struct == null) {
+            System.err.println("Error: Struct " + structName + " undefined");
+            values.put(ctx, new ValueAndType("0", "i32"));
+            return;
+        }
+
+        // Generate GEP for each field
+        String currentPtr = baseVar.pointerName;
+        for (int i = 1; i < ids.size(); i++) {
+            String fieldName = ids.get(i).getText();
+            int fieldIndex = struct.getFieldIndex(fieldName);
+            
+            String gepReg = LLVMGenerator.newTempReg();
+            LLVMGenerator.emit(
+                gepReg + " = getelementptr inbounds %struct." + structName + 
+                ", %struct." + structName + "* " + currentPtr + ", i32 0, i32 " + fieldIndex
+            );
+            currentPtr = gepReg;
+        }
+
+        values.put(ctx, new ValueAndType(currentPtr, struct.getMemberType(ids.get(1).getText())));
     }
 
     @Override
