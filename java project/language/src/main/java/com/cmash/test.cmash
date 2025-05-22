@@ -1,19 +1,42 @@
+struct RNG{
+    int ChosenValue
+}
 
-struct Person {
-    int Age
-    float Salary
-
-    void PrintAge()
-    {
-        print(Age)
+void Adding(int Value, int Iterations) {
+    for(int Iter = 0; Iter < Iterations; Iter = Iter + 1) {
+        Value = Value + 1
+        print("Iteration:")
+        print(Value)
     }
 }
 
 int Main () {
 
-    struct Person P
-    P.Age = 25
-    P.PrintAge()
+    int MyInt
+
+    read(MyInt)
+    if(MyInt == 4)
+    {
+        print("Good choice")
+    }
+    else
+    {
+        print("Pick again")
+        read(MyInt)
+    }
+
+    struct RNG UserInput
+    UserInput.ChosenValue = MyInt
+    print("Checking if save was correct")
+    print(UserInput.ChosenValue)
+
+    int Result = 0
+
+    print("Before loop")
+    print(Result)
+
+    Adding(Result, MyInt)
+    print(Result)
     
     return 0
 }
