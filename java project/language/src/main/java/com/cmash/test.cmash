@@ -1,5 +1,8 @@
 struct RNG{
     int ChosenValue
+    void Function () {
+        print("Function")
+    }
 }
 
 void Adding(int Value, int Iterations) {
@@ -29,6 +32,7 @@ int Main () {
     UserInput.ChosenValue = MyInt
     print("Checking if save was correct")
     print(UserInput.ChosenValue)
+    print("Function")
 
     int Result = 0
 
@@ -36,7 +40,14 @@ int Main () {
     print(Result)
 
     Adding(Result, MyInt)
+    print("After loop")
     print(Result)
+
+    print("Cleaning ...")
+    while(MyInt > 0) {
+        MyInt = MyInt - 1
+        print(MyInt)
+    }
     
     return 0
 }

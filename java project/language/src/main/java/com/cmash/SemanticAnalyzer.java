@@ -69,7 +69,7 @@ public class SemanticAnalyzer extends CmashBaseVisitor {
     // Recursively evaluates the type of an expression and performs type checking.
     public String evaluateExpressionType(CmashParser.ExpressionContext ctx) {
         // --- Function-call case ---
-        if (ctx.functionCall() != null) {
+        if (ctx.functionCall() != null && ctx.functionCall().ID() != null) {
             CmashParser.FunctionCallContext fc = ctx.functionCall();
             String fname = fc.ID().getText();
     

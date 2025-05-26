@@ -1,0 +1,12 @@
+int Main () {
+
+    int MyInt = 4
+
+    if (7 > 8.5) {
+        print("Int more then double")
+    }
+
+    Value = 4 + MyInt
+    
+    return 0
+}

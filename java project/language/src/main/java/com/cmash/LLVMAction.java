@@ -660,7 +660,10 @@ public class LLVMAction extends CmashBaseListener {
             info.getMemberTypes().stream().collect(Collectors.joining(", ")) + " }";
         LLVMGenerator.emitGlobal(llvmType);
         
-        scopes.pop();  // Exit STRUCT scope
+        if (scopes.size() > 0) {
+            scopes.pop();  // Exit STRUCT scope
+        }
+        
         currentStructName = null;
     }
 
